@@ -1,6 +1,7 @@
 /**
  * World - Chunk-based world management
  * Feature: 002-chunk-terrain-system
+ * Updated: 004-colosseum-spawn-map - Added Colosseum spawn structure
  * 
  * Manages all chunks and provides block access via world coordinates.
  */
@@ -25,6 +26,7 @@ import {
 } from './ChunkConstants'
 import { TerrainGenerator } from '../terrain/TerrainGenerator'
 import { CaveGenerator } from '../terrain/CaveGenerator'
+import { ColosseumConfig } from '../terrain/ColosseumGenerator'
 
 /**
  * World configuration
@@ -34,6 +36,8 @@ export interface WorldConfig {
   terrainConfig?: Partial<TerrainConfig>
   caveConfig?: Partial<CaveConfig>
   enableCaves?: boolean
+  enableColosseum?: boolean
+  colosseumConfig?: Partial<ColosseumConfig>
 }
 
 /**
@@ -75,6 +79,12 @@ export class World {
       const caveConfig = { ...DEFAULT_CAVE_CONFIG, ...config.caveConfig }
       this.caveGenerator = new CaveGenerator(this.seed, caveConfig)
       this.terrainGenerator.enableCaves(this.caveGenerator)
+    }
+
+    // Initialize Colosseum generator if enabled (default: true)
+    const enableColosseum = config.enableColosseum ?? true
+    if (enableColosseum) {
+      this.terrainGenerator.enableColosseum(config.colosseumConfig)
     }
   }
 
@@ -230,11 +240,23 @@ export class World {
   }
 
   /**
-   * Get spawn position (center of world, above terrain)
+   * Get spawn position (center of Colosseum arena, or terrain origin)
    */
   getSpawnPosition(): { x: number; y: number; z: number } {
     const x = 0
     const z = 0
+    
+    // If Colosseum is enabled, spawn on the arena floor
+    const colosseumGenerator = this.terrainGenerator.getColosseumGenerator()
+    if (colosseumGenerator) {
+      return {
+        x: x + 0.5,
+        y: colosseumGenerator.getSpawnHeight() + 0.8, // Player eye height above arena floor
+        z: z + 0.5
+      }
+    }
+    
+    // Fallback to terrain height
     const groundHeight = this.getHeightAt(x, z)
     
     return {

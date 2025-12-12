@@ -1,6 +1,7 @@
 /**
  * TerrainGenerator - Generates terrain using Simplex Noise
  * Feature: 002-chunk-terrain-system
+ * Updated: 004-colosseum-spawn-map - Added Colosseum structure generation
  * 
  * Creates natural terrain with hills, valleys, and layered block distribution.
  */
@@ -15,6 +16,7 @@ import {
 } from '../core/ChunkConstants'
 import { NoiseGenerator } from './NoiseGenerator'
 import { CaveGenerator } from './CaveGenerator'
+import { ColosseumGenerator, ColosseumConfig } from './ColosseumGenerator'
 
 /**
  * TerrainGenerator creates chunk block data using noise-based terrain generation
@@ -25,6 +27,7 @@ export class TerrainGenerator {
 
   private noise: NoiseGenerator
   private caveGenerator: CaveGenerator | null = null
+  private colosseumGenerator: ColosseumGenerator | null = null
 
   // Height cache for performance (key: "x,z")
   private heightCache: Map<string, number> = new Map()
@@ -41,6 +44,25 @@ export class TerrainGenerator {
    */
   enableCaves(caveGenerator: CaveGenerator): void {
     this.caveGenerator = caveGenerator
+  }
+
+  /**
+   * Enable Colosseum structure generation at world origin
+   */
+  enableColosseum(config?: Partial<ColosseumConfig>): void {
+    // Set base height to match terrain at origin
+    const baseHeight = this.getHeightAt(0, 0)
+    this.colosseumGenerator = new ColosseumGenerator({
+      ...config,
+      baseHeight
+    })
+  }
+
+  /**
+   * Get the Colosseum generator (if enabled)
+   */
+  getColosseumGenerator(): ColosseumGenerator | null {
+    return this.colosseumGenerator
   }
 
   /**
@@ -125,6 +147,14 @@ export class TerrainGenerator {
     worldZ: number,
     terrainHeight: number
   ): BlockType {
+    // Check Colosseum structure first (if enabled)
+    if (this.colosseumGenerator) {
+      const colosseumBlock = this.colosseumGenerator.getBlockAt(worldX, worldY, worldZ)
+      if (colosseumBlock !== null) {
+        return colosseumBlock
+      }
+    }
+
     // Above terrain = air
     if (worldY > terrainHeight) {
       return BlockType.AIR
