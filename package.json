@@ -1,0 +1,20 @@
+{
+  "name": "webcraft",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3",
+    "@types/three": "^0.170.0"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  }
+}
