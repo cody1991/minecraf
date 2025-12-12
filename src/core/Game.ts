@@ -37,6 +37,9 @@ export class Game {
     // Initialize world with chunk system
     this.world = new World(worldConfig)
 
+    // Log world seed for debugging
+    console.log(`[World] Seed: ${this.world.getSeed()}`)
+
     // Initialize renderer
     this.renderer = new Renderer(container)
 

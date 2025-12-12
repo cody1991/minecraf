@@ -14,6 +14,9 @@ export interface InputState {
   // Jump key
   jump: boolean
 
+  // Sprint key (Shift)
+  sprint: boolean
+
   // Mouse movement (delta since last frame)
   mouseX: number
   mouseY: number
@@ -25,6 +28,9 @@ export interface InputState {
   // Number keys for block selection (1-9, 0)
   // Returns index 0-9 where 1->0, 2->1, ..., 9->8, 0->9
   numberKey: number | null
+
+  // Tab key for cycling to next block
+  tabCycle: boolean
 }
 
 /**
@@ -49,11 +55,13 @@ export class InputManager {
       left: this.keyboardInput.isKeyDown('KeyA') || this.keyboardInput.isKeyDown('ArrowLeft'),
       right: this.keyboardInput.isKeyDown('KeyD') || this.keyboardInput.isKeyDown('ArrowRight'),
       jump: this.keyboardInput.isKeyDown('Space'),
+      sprint: this.keyboardInput.isKeyDown('ShiftLeft') || this.keyboardInput.isKeyDown('ShiftRight'),
       mouseX: this.mouseInput.getMouseDeltaX(),
       mouseY: this.mouseInput.getMouseDeltaY(),
       leftClick: this.mouseInput.wasLeftClicked(),
       rightClick: this.mouseInput.wasRightClicked(),
-      numberKey: this.keyboardInput.getNumberKeyPressed()
+      numberKey: this.keyboardInput.getNumberKeyPressed(),
+      tabCycle: this.keyboardInput.wasTabPressed()
     }
   }
 
@@ -64,6 +72,7 @@ export class InputManager {
     this.mouseInput.resetDeltas()
     this.mouseInput.resetClicks()
     this.keyboardInput.resetNumberKey()
+    this.keyboardInput.resetTab()
   }
 
   /**

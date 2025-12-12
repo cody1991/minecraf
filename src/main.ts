@@ -75,6 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      // Handle Tab key to cycle to next block
+      if (input.tabCycle) {
+        player.selectNextBlock()
+        blockSelector.updateSelection(player.selectedBlockType)
+      }
+
       // Handle block destruction (left click)
       if (input.leftClick) {
         blockInteraction.destroyBlock()

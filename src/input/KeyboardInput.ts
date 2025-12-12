@@ -4,6 +4,7 @@
 export class KeyboardInput {
   private keysDown: Set<string> = new Set()
   private numberKeyPressed: number | null = null
+  private tabPressed: boolean = false
 
   constructor() {
     window.addEventListener('keydown', this.handleKeyDown.bind(this))
@@ -22,6 +23,12 @@ export class KeyboardInput {
       this.numberKeyPressed = parseInt(event.code.replace('Digit', '')) - 1
     } else if (event.code === 'Digit0') {
       this.numberKeyPressed = 9
+    }
+
+    // Tab key for cycling blocks
+    if (event.code === 'Tab') {
+      event.preventDefault() // Prevent browser tab switching
+      this.tabPressed = true
     }
   }
 
@@ -52,6 +59,20 @@ export class KeyboardInput {
    */
   resetNumberKey(): void {
     this.numberKeyPressed = null
+  }
+
+  /**
+   * Check if Tab was pressed this frame
+   */
+  wasTabPressed(): boolean {
+    return this.tabPressed
+  }
+
+  /**
+   * Reset Tab state (call at end of frame)
+   */
+  resetTab(): void {
+    this.tabPressed = false
   }
 
   /**

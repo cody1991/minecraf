@@ -100,6 +100,22 @@ export const DEFAULT_TERRAIN_CONFIG: TerrainConfig = {
 }
 
 // =============================================================================
+// Biome Generation Configuration
+// =============================================================================
+
+/** Water level height (blocks below this and above terrain are water) */
+export const WATER_LEVEL = 59 // baseHeight - 5
+
+/** Biome noise sampling scale (larger = bigger biome regions) */
+export const BIOME_SCALE = 0.005
+
+/** Spawn safe radius - area around origin forced to PLAINS biome */
+export const SPAWN_SAFE_RADIUS = 60
+
+/** Colosseum protection radius - area with flat terrain for the structure */
+export const COLOSSEUM_FLAT_RADIUS = 50
+
+// =============================================================================
 // Cave Generation Configuration
 // =============================================================================
 

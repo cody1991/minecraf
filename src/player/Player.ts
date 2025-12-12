@@ -15,6 +15,9 @@ export const PLAYER_EYE_HEIGHT = 1.6
 export const PLAYER_SPEED = 5.0 // blocks per second
 export const MOUSE_SENSITIVITY = 0.002
 
+/** Sprint speed multiplier (1.5x normal speed) */
+export const SPRINT_MULTIPLIER = 1.5
+
 /**
  * Player class - represents the player entity
  */

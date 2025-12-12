@@ -66,8 +66,8 @@ export class World {
   public onChunkUnloaded: ((chunk: Chunk) => void) | null = null
 
   constructor(config: WorldConfig = {}) {
-    // Generate seed if not provided
-    this.seed = config.seed ?? Math.floor(Math.random() * 2147483647)
+    // Generate seed using Date.now() if not provided (ensures different terrain each game)
+    this.seed = config.seed ?? Date.now()
 
     // Initialize terrain generator
     const terrainConfig = { ...DEFAULT_TERRAIN_CONFIG, ...config.terrainConfig }
@@ -307,6 +307,13 @@ export class World {
    */
   getTerrainGenerator(): TerrainGenerator {
     return this.terrainGenerator
+  }
+
+  /**
+   * Get world seed (for debugging/display)
+   */
+  getSeed(): number {
+    return this.seed
   }
 
   /**

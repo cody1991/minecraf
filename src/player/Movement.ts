@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Player, PLAYER_SPEED, MOUSE_SENSITIVITY } from './Player'
+import { Player, PLAYER_SPEED, MOUSE_SENSITIVITY, SPRINT_MULTIPLIER } from './Player'
 import { World } from '../core/World'
 import { InputState } from '../input/InputManager'
 import { PhysicsSystem } from '../physics/PhysicsSystem'
@@ -71,6 +71,7 @@ export class Movement {
   /**
    * Update horizontal velocity based on input
    * Velocity is set directly (not accumulated) for responsive controls
+   * Applies sprint multiplier when sprint key is held
    */
   private updateHorizontalVelocity(input: InputState): void {
     // Calculate movement direction
@@ -92,7 +93,10 @@ export class Movement {
     // Normalize and apply speed to velocity
     if (moveDirection.lengthSq() > 0) {
       moveDirection.normalize()
-      moveDirection.multiplyScalar(PLAYER_SPEED)
+      
+      // Apply sprint multiplier if sprinting
+      const speed = input.sprint ? PLAYER_SPEED * SPRINT_MULTIPLIER : PLAYER_SPEED
+      moveDirection.multiplyScalar(speed)
       
       this.player.velocity.x = moveDirection.x
       this.player.velocity.z = moveDirection.z

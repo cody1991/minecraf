@@ -2,8 +2,10 @@
  * TerrainGenerator - Generates terrain using Simplex Noise
  * Feature: 002-chunk-terrain-system
  * Updated: 004-colosseum-spawn-map - Added Colosseum structure generation
+ * Updated: 006-random-terrain-generation - Added biome-based terrain generation
  * 
  * Creates natural terrain with hills, valleys, and layered block distribution.
+ * Supports multiple biomes (plains, lakes, mountains) with smooth transitions.
  */
 
 import { BlockType } from '../core/Block'
@@ -13,10 +15,14 @@ import {
   TerrainConfig,
   DEFAULT_TERRAIN_CONFIG,
   blockIndex,
+  WATER_LEVEL,
+  COLOSSEUM_FLAT_RADIUS,
 } from '../core/ChunkConstants'
 import { NoiseGenerator } from './NoiseGenerator'
 import { CaveGenerator } from './CaveGenerator'
 import { ColosseumGenerator, ColosseumConfig } from './ColosseumGenerator'
+import { BiomeGenerator } from './BiomeGenerator'
+import { BIOME_CONFIGS } from './BiomeTypes'
 
 /**
  * TerrainGenerator creates chunk block data using noise-based terrain generation
@@ -26,6 +32,7 @@ export class TerrainGenerator {
   public readonly config: TerrainConfig
 
   private noise: NoiseGenerator
+  private biomeGenerator: BiomeGenerator
   private caveGenerator: CaveGenerator | null = null
   private colosseumGenerator: ColosseumGenerator | null = null
 
@@ -37,6 +44,7 @@ export class TerrainGenerator {
     this.seed = seed
     this.config = { ...DEFAULT_TERRAIN_CONFIG, ...config }
     this.noise = new NoiseGenerator(seed)
+    this.biomeGenerator = new BiomeGenerator(seed)
   }
 
   /**
@@ -102,6 +110,8 @@ export class TerrainGenerator {
   /**
    * Get terrain height at world X,Z coordinates
    * Uses fractal noise for natural-looking terrain
+   * Height is adjusted based on biome type
+   * Colosseum area uses flat terrain at base height
    */
   getHeightAt(worldX: number, worldZ: number): number {
     // Check cache first
@@ -110,6 +120,23 @@ export class TerrainGenerator {
     if (cached !== undefined) {
       return cached
     }
+
+    // Colosseum protection zone - force flat terrain at base height
+    const distanceFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ)
+    if (distanceFromOrigin < COLOSSEUM_FLAT_RADIUS) {
+      // Use fixed base height for flat terrain around Colosseum
+      const height = this.config.baseHeight
+      this.heightCache.set(cacheKey, height)
+      return height
+    }
+
+    // Get biome at this position
+    const biome = this.biomeGenerator.getBiomeAt(worldX, worldZ)
+    const biomeConfig = BIOME_CONFIGS[biome]
+
+    // Adjust base height and variation based on biome
+    const adjustedBaseHeight = this.config.baseHeight + biomeConfig.baseHeightOffset
+    const adjustedVariation = this.config.heightVariation * biomeConfig.heightVariationScale
 
     // Generate height using fractal noise
     const noiseValue = this.noise.fractal2D(
@@ -122,7 +149,7 @@ export class TerrainGenerator {
 
     // Map noise (-1 to 1) to height range
     const height = Math.floor(
-      this.config.baseHeight + noiseValue * this.config.heightVariation
+      adjustedBaseHeight + noiseValue * adjustedVariation
     )
 
     // Cache the result
@@ -140,6 +167,7 @@ export class TerrainGenerator {
 
   /**
    * Determine block type at a specific world position
+   * Includes water generation for areas below water level
    */
   private getBlockTypeAt(
     worldX: number,
@@ -155,6 +183,11 @@ export class TerrainGenerator {
       }
     }
 
+    // Water generation: below water level and above terrain = water
+    if (worldY <= WATER_LEVEL && worldY > terrainHeight) {
+      return BlockType.WATER
+    }
+
     // Above terrain = air
     if (worldY > terrainHeight) {
       return BlockType.AIR
@@ -168,9 +201,13 @@ export class TerrainGenerator {
     // Calculate depth from surface
     const depthFromSurface = terrainHeight - worldY
 
-    // Surface layer = grass
+    // Get biome for surface block type
+    const biome = this.biomeGenerator.getBiomeAt(worldX, worldZ)
+    const biomeConfig = BIOME_CONFIGS[biome]
+
+    // Surface layer = biome-specific block
     if (depthFromSurface === 0) {
-      return BlockType.GRASS
+      return biomeConfig.surfaceBlock
     }
 
     // Dirt layer (just below surface)
