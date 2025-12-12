@@ -10,6 +10,7 @@ import { BlockInteraction } from './player/BlockInteraction'
 /**
  * WebCraft - Web 版我的世界
  * 入口文件
+ * Feature: 002-chunk-terrain-system
  */
 
 // Wait for DOM to be ready
@@ -20,8 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return
   }
 
-  // Create game instance
-  const game = new Game(container)
+  // Create game instance with optional seed
+  const urlParams = new URLSearchParams(window.location.search)
+  const seedParam = urlParams.get('seed')
+  const seed = seedParam ? parseInt(seedParam, 10) : undefined
+
+  const game = new Game(container, { seed })
 
   // Get spawn position
   const spawn = game.getWorld().getSpawnPosition()
@@ -83,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update camera to follow player
     cameraController.update()
 
+    // Update player position for chunk loading
+    game.setPlayerPosition(player.position.x, player.position.y, player.position.z)
+
     // Reset per-frame input state
     inputManager.resetFrameState()
   })
@@ -91,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
   game.start()
 
   console.log('WebCraft initialized!')
-  console.log('World size:', game.getWorld().width, 'x', game.getWorld().depth)
+  console.log('World seed:', game.getWorld().seed)
   console.log('Click to start, WASD to move, mouse to look around')
   console.log('Left click to destroy, right click to place blocks')
   console.log('Press 1-5 to switch block types')

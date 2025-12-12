@@ -1,7 +1,15 @@
+/**
+ * Game - Main game loop and system management
+ * Feature: 002-chunk-terrain-system
+ * 
+ * Manages the game loop, world, and rendering with chunk-based architecture.
+ */
+
 import * as THREE from 'three'
-import { World } from './World'
+import { World, WorldConfig } from './World'
 import { Renderer } from '../renderer/Renderer'
-import { BlockMesh } from '../renderer/BlockMesh'
+import { ChunkRenderer } from '../renderer/ChunkRenderer'
+import { ChunkManager } from './ChunkManager'
 
 /**
  * Main Game class - manages game loop and core systems
@@ -9,7 +17,8 @@ import { BlockMesh } from '../renderer/BlockMesh'
 export class Game {
   private world: World
   private renderer: Renderer
-  private blockMesh: BlockMesh
+  private chunkRenderer: ChunkRenderer
+  private chunkManager: ChunkManager
   private camera: THREE.PerspectiveCamera
 
   private isRunning: boolean = false
@@ -18,15 +27,24 @@ export class Game {
   private fpsTime: number = 0
   private currentFps: number = 0
 
+  // Player position for chunk loading (updated externally)
+  private playerPosition: THREE.Vector3 = new THREE.Vector3()
+
   // Callbacks for external systems
   private updateCallback: ((deltaTime: number) => void) | null = null
 
-  constructor(container: HTMLElement) {
-    // Initialize world
-    this.world = new World()
+  constructor(container: HTMLElement, worldConfig?: WorldConfig) {
+    // Initialize world with chunk system
+    this.world = new World(worldConfig)
 
     // Initialize renderer
     this.renderer = new Renderer(container)
+
+    // Initialize chunk renderer
+    this.chunkRenderer = new ChunkRenderer(this.renderer.getScene())
+
+    // Initialize chunk manager
+    this.chunkManager = new ChunkManager(this.world, this.chunkRenderer)
 
     // Initialize camera
     const { width, height } = this.renderer.getSize()
@@ -35,12 +53,13 @@ export class Game {
     // Set initial camera position at spawn
     const spawn = this.world.getSpawnPosition()
     this.camera.position.set(spawn.x, spawn.y, spawn.z)
-
-    // Initialize block mesh
-    this.blockMesh = new BlockMesh(this.world, this.renderer.getScene())
+    this.playerPosition.copy(this.camera.position)
 
     // Handle resize
     window.addEventListener('resize', this.handleResize.bind(this))
+
+    // Initial chunk loading around spawn
+    this.chunkManager.update(spawn.x, spawn.y, spawn.z)
   }
 
   /**
@@ -57,6 +76,13 @@ export class Game {
    */
   setUpdateCallback(callback: (deltaTime: number) => void): void {
     this.updateCallback = callback
+  }
+
+  /**
+   * Update player position (called by player system)
+   */
+  setPlayerPosition(x: number, y: number, z: number): void {
+    this.playerPosition.set(x, y, z)
   }
 
   /**
@@ -103,8 +129,21 @@ export class Game {
       this.updateCallback(deltaTime)
     }
 
-    // Update block mesh if world changed
-    this.blockMesh.update()
+    // Update chunk loading based on player position
+    this.chunkManager.update(
+      this.playerPosition.x,
+      this.playerPosition.y,
+      this.playerPosition.z
+    )
+
+    // Update dirty chunk meshes
+    const dirtyChunks = this.world.getDirtyChunks()
+    for (const chunk of dirtyChunks) {
+      this.chunkRenderer.updateChunkMesh(chunk)
+    }
+
+    // Update chunk visibility (frustum culling)
+    this.chunkRenderer.update(this.camera)
 
     // Render
     this.renderer.render(this.camera)
@@ -116,7 +155,9 @@ export class Game {
   private updateFpsDisplay(): void {
     const fpsElement = document.getElementById('fps-counter')
     if (fpsElement) {
-      fpsElement.textContent = `FPS: ${this.currentFps}`
+      const loadedChunks = this.chunkManager.getLoadedCount()
+      const visibleChunks = this.chunkRenderer.getVisibleChunkCount()
+      fpsElement.textContent = `FPS: ${this.currentFps} | Chunks: ${visibleChunks}/${loadedChunks}`
     }
   }
 
@@ -142,10 +183,17 @@ export class Game {
   }
 
   /**
-   * Get the block mesh
+   * Get the chunk renderer
    */
-  getBlockMesh(): BlockMesh {
-    return this.blockMesh
+  getChunkRenderer(): ChunkRenderer {
+    return this.chunkRenderer
+  }
+
+  /**
+   * Get the chunk manager
+   */
+  getChunkManager(): ChunkManager {
+    return this.chunkManager
   }
 
   /**
@@ -161,7 +209,8 @@ export class Game {
   dispose(): void {
     this.stop()
     window.removeEventListener('resize', this.handleResize.bind(this))
-    this.blockMesh.dispose()
+    this.chunkRenderer.dispose()
+    this.world.dispose()
     this.renderer.dispose()
   }
 }

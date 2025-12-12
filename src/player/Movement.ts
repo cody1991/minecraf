@@ -151,17 +151,19 @@ export class Movement {
 
   /**
    * Apply world boundary constraints
+   * Note: With chunk-based world, X/Z are now infinite, only Y is bounded
    */
   private applyWorldBounds(): void {
-    const margin = this.player.width / 2 + 0.1
-
-    this.player.position.x = Math.max(margin, Math.min(this.world.width - margin, this.player.position.x))
-    this.player.position.z = Math.max(margin, Math.min(this.world.depth - margin, this.player.position.z))
-
-    // Keep player above ground level
+    // Keep player above minimum world height (Y = 0)
     const minY = this.player.height / 2 + 0.1
     if (this.player.position.y < minY) {
       this.player.position.y = minY
+    }
+
+    // Keep player below maximum world height (Y = 128)
+    const maxY = 128 - this.player.height / 2 - 0.1
+    if (this.player.position.y > maxY) {
+      this.player.position.y = maxY
     }
   }
 }
