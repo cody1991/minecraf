@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create player at spawn
   const player = new Player(spawn.x, spawn.y, spawn.z)
 
+  // Register player with game for underwater effect
+  game.setPlayer(player)
+
   // Create camera controller
   const cameraController = new Camera(game.getCamera(), player)
 

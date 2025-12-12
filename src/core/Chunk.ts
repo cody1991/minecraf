@@ -6,7 +6,7 @@
  */
 
 import * as THREE from 'three'
-import { BlockType } from './Block'
+import { BlockType, isTransparent } from './Block'
 import {
   CHUNK_SIZE,
   CHUNK_VOLUME,
@@ -173,8 +173,12 @@ export class Chunk {
   }
 
   /**
-   * Check if a block face is exposed (adjacent to air or chunk boundary)
+   * Check if a block face is exposed (adjacent to air or transparent block)
    * Used for mesh optimization
+   * 
+   * Enhanced logic for transparent blocks:
+   * - Opaque blocks: render face if neighbor is AIR or transparent
+   * - Transparent blocks: render face if neighbor is AIR or different type
    */
   isFaceExposed(
     localX: number,
@@ -198,7 +202,26 @@ export class Chunk {
       return true
     }
 
-    return this.getBlock(nx, ny, nz) === BlockType.AIR
+    const currentType = this.getBlock(localX, localY, localZ)
+    const neighborType = this.getBlock(nx, ny, nz)
+
+    // Neighbor is AIR - always render face
+    if (neighborType === BlockType.AIR) {
+      return true
+    }
+
+    const currentTransparent = isTransparent(currentType)
+    const neighborTransparent = isTransparent(neighborType)
+
+    if (currentTransparent) {
+      // Transparent block: render face if neighbor is different type
+      // This prevents rendering faces between same-type transparent blocks (e.g., water-water)
+      // but renders faces at boundaries (e.g., water-glass, water-solid)
+      return neighborType !== currentType
+    } else {
+      // Opaque block: render face if neighbor is transparent
+      return neighborTransparent
+    }
   }
 
   /**

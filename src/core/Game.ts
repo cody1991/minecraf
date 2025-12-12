@@ -1,6 +1,7 @@
 /**
  * Game - Main game loop and system management
  * Feature: 002-chunk-terrain-system
+ * Feature: 007-underwater-display - Added underwater effect support
  * 
  * Manages the game loop, world, and rendering with chunk-based architecture.
  */
@@ -10,6 +11,8 @@ import { World, WorldConfig } from './World'
 import { Renderer } from '../renderer/Renderer'
 import { ChunkRenderer } from '../renderer/ChunkRenderer'
 import { ChunkManager } from './ChunkManager'
+import { UnderwaterEffect } from '../renderer/UnderwaterEffect'
+import { Player } from '../player/Player'
 
 /**
  * Main Game class - manages game loop and core systems
@@ -19,6 +22,7 @@ export class Game {
   private renderer: Renderer
   private chunkRenderer: ChunkRenderer
   private chunkManager: ChunkManager
+  private underwaterEffect: UnderwaterEffect
   private camera: THREE.PerspectiveCamera
 
   private isRunning: boolean = false
@@ -29,6 +33,9 @@ export class Game {
 
   // Player position for chunk loading (updated externally)
   private playerPosition: THREE.Vector3 = new THREE.Vector3()
+
+  // Player reference for underwater effect
+  private player: Player | null = null
 
   // Callbacks for external systems
   private updateCallback: ((deltaTime: number) => void) | null = null
@@ -46,8 +53,30 @@ export class Game {
     // Initialize chunk renderer
     this.chunkRenderer = new ChunkRenderer(this.renderer.getScene())
 
+    // Set world block getter for cross-chunk transparent block rendering
+    // Returns null if chunk is not loaded, allowing proper handling of chunk boundaries
+    this.chunkRenderer.setWorldBlockGetter((x, y, z) => {
+      const bx = Math.floor(x)
+      const by = Math.floor(y)
+      const bz = Math.floor(z)
+      
+      // Check if chunk is loaded
+      const cx = Math.floor(bx / 16)
+      const cy = Math.floor(by / 16)
+      const cz = Math.floor(bz / 16)
+      
+      if (!this.world.isChunkLoaded(cx, cy, cz)) {
+        return null // Chunk not loaded
+      }
+      
+      return this.world.getBlock(x, y, z)
+    })
+
     // Initialize chunk manager
     this.chunkManager = new ChunkManager(this.world, this.chunkRenderer)
+
+    // Initialize underwater effect
+    this.underwaterEffect = new UnderwaterEffect(this.renderer.getScene())
 
     // Initialize camera
     const { width, height } = this.renderer.getSize()
@@ -79,6 +108,13 @@ export class Game {
    */
   setUpdateCallback(callback: (deltaTime: number) => void): void {
     this.updateCallback = callback
+  }
+
+  /**
+   * Set player reference for underwater effect
+   */
+  setPlayer(player: Player): void {
+    this.player = player
   }
 
   /**
@@ -130,6 +166,11 @@ export class Game {
     // Call update callback (for player, input, etc.)
     if (this.updateCallback) {
       this.updateCallback(deltaTime)
+    }
+
+    // Update underwater effect based on player state
+    if (this.player) {
+      this.underwaterEffect.update(this.player.isSubmerged)
     }
 
     // Update chunk loading based on player position
@@ -200,6 +241,13 @@ export class Game {
   }
 
   /**
+   * Get the underwater effect manager
+   */
+  getUnderwaterEffect(): UnderwaterEffect {
+    return this.underwaterEffect
+  }
+
+  /**
    * Get current FPS
    */
   getFps(): number {
@@ -212,6 +260,7 @@ export class Game {
   dispose(): void {
     this.stop()
     window.removeEventListener('resize', this.handleResize.bind(this))
+    this.underwaterEffect.dispose()
     this.chunkRenderer.dispose()
     this.world.dispose()
     this.renderer.dispose()

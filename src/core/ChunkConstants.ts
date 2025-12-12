@@ -222,3 +222,19 @@ export function isValidChunkY(cy: number): boolean {
 export function isValidWorldY(worldY: number): boolean {
   return worldY >= WORLD_MIN_Y && worldY < WORLD_MAX_Y
 }
+
+// =============================================================================
+// Underwater Effect Configuration
+// =============================================================================
+
+/** Underwater fog color (deep blue) */
+export const UNDERWATER_FOG_COLOR = 0x1a3a5c
+
+/** Underwater fog density (controls visibility falloff) */
+export const UNDERWATER_FOG_DENSITY = 0.04
+
+/** Underwater visibility in blocks */
+export const UNDERWATER_VISIBILITY = 16
+
+/** Normal sky background color */
+export const SKY_BACKGROUND_COLOR = 0x87ceeb

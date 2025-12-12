@@ -1,6 +1,7 @@
 /**
  * ChunkMesh - Renders a single chunk with textured blocks
  * Feature: 005-block-textures
+ * Feature: 007-underwater-display - Enhanced transparent block rendering
  * 
  * Uses custom geometry with per-face UV mapping for texture support.
  * Supports multi-face textures (different textures for top/bottom/sides).
@@ -8,8 +9,12 @@
 
 import * as THREE from 'three'
 import { Chunk } from '../core/Chunk'
-import { BLOCK_COLORS, isTransparent } from '../core/Block'
+import { BlockType, BLOCK_COLORS, isTransparent } from '../core/Block'
 import { TextureAtlas } from './TextureAtlas'
+
+// Type for world block getter function
+// Returns BlockType, or null if chunk is not loaded
+type WorldBlockGetter = (x: number, y: number, z: number) => BlockType | null
 
 // Render face type (matches Chunk.isFaceExposed)
 type RenderFace = 'top' | 'bottom' | 'front' | 'back' | 'left' | 'right'
@@ -92,11 +97,13 @@ export class ChunkMesh {
   private transparentMesh: THREE.Mesh | null = null
   private scene: THREE.Scene
   private textureAtlas: TextureAtlas
+  private worldBlockGetter: WorldBlockGetter | null = null
 
-  constructor(chunk: Chunk, scene: THREE.Scene) {
+  constructor(chunk: Chunk, scene: THREE.Scene, worldBlockGetter?: WorldBlockGetter) {
     this.chunk = chunk
     this.scene = scene
     this.textureAtlas = getSharedTextureAtlas()
+    this.worldBlockGetter = worldBlockGetter ?? null
   }
 
   /**
@@ -167,7 +174,7 @@ export class ChunkMesh {
       const faces: RenderFace[] = ['top', 'bottom', 'front', 'back', 'left', 'right']
       
       for (const face of faces) {
-        if (!this.chunk.isFaceExposed(localX, localY, localZ, face)) {
+        if (!this.isFaceExposed(localX, localY, localZ, worldX, worldY, worldZ, type, face)) {
           continue
         }
 
@@ -213,6 +220,80 @@ export class ChunkMesh {
     })
 
     return { positions, normals, uvs, colors, indices }
+  }
+
+  /**
+   * Check if a block face should be rendered
+   * Handles both intra-chunk and cross-chunk boundary cases
+   */
+  private isFaceExposed(
+    localX: number, localY: number, localZ: number,
+    worldX: number, worldY: number, worldZ: number,
+    currentType: BlockType,
+    face: RenderFace
+  ): boolean {
+    // Calculate neighbor world coordinates
+    let nwx = worldX, nwy = worldY, nwz = worldZ
+    switch (face) {
+      case 'top': nwy++; break
+      case 'bottom': nwy--; break
+      case 'left': nwx--; break
+      case 'right': nwx++; break
+      case 'front': nwz++; break
+      case 'back': nwz--; break
+    }
+
+    // Get neighbor block type
+    let neighborType: BlockType
+
+    // Check if neighbor is within this chunk
+    let nlx = localX, nly = localY, nlz = localZ
+    switch (face) {
+      case 'top': nly++; break
+      case 'bottom': nly--; break
+      case 'left': nlx--; break
+      case 'right': nlx++; break
+      case 'front': nlz++; break
+      case 'back': nlz--; break
+    }
+
+    if (this.chunk.isValidLocal(nlx, nly, nlz)) {
+      // Neighbor is within this chunk
+      neighborType = this.chunk.getBlock(nlx, nly, nlz)
+    } else if (this.worldBlockGetter) {
+      // Neighbor is in another chunk, use world getter
+      const result = this.worldBlockGetter(nwx, nwy, nwz)
+      
+      // If neighbor chunk is not loaded (returns null)
+      if (result === null) {
+        // For transparent blocks, assume same type (don't render internal faces)
+        // For opaque blocks, assume exposed (render face)
+        return !isTransparent(currentType)
+      }
+      
+      neighborType = result
+    } else {
+      // No world getter available
+      // For transparent blocks, assume same type (don't render)
+      // For opaque blocks, assume exposed (render)
+      return !isTransparent(currentType)
+    }
+
+    // Neighbor is AIR - always render face
+    if (neighborType === BlockType.AIR) {
+      return true
+    }
+
+    const currentTransparent = isTransparent(currentType)
+    const neighborTransparent = isTransparent(neighborType)
+
+    if (currentTransparent) {
+      // Transparent block: render face if neighbor is different type
+      return neighborType !== currentType
+    } else {
+      // Opaque block: render face if neighbor is transparent
+      return neighborTransparent
+    }
   }
 
   /**

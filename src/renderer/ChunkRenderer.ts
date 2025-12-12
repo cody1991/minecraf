@@ -1,14 +1,20 @@
 /**
  * ChunkRenderer - Manages rendering of multiple chunks
  * Feature: 002-chunk-terrain-system
+ * Feature: 007-underwater-display - Cross-chunk transparent block rendering
  * 
  * Handles frustum culling and chunk mesh lifecycle.
  */
 
 import * as THREE from 'three'
 import { Chunk } from '../core/Chunk'
+import { BlockType } from '../core/Block'
 import { ChunkMesh, disposeSharedResources } from './ChunkMesh'
 import { chunkKey } from '../core/ChunkConstants'
+
+// Type for world block getter function
+// Returns BlockType, or null if chunk is not loaded
+type WorldBlockGetter = (x: number, y: number, z: number) => BlockType | null
 
 /**
  * ChunkRenderer manages all chunk meshes and performs frustum culling
@@ -18,6 +24,7 @@ export class ChunkRenderer {
   private chunkMeshes: Map<string, ChunkMesh> = new Map()
   private frustum: THREE.Frustum = new THREE.Frustum()
   private projScreenMatrix: THREE.Matrix4 = new THREE.Matrix4()
+  private worldBlockGetter: WorldBlockGetter | null = null
 
   // Stats
   private visibleChunkCount: number = 0
@@ -25,6 +32,13 @@ export class ChunkRenderer {
 
   constructor(scene: THREE.Scene) {
     this.scene = scene
+  }
+
+  /**
+   * Set the world block getter function for cross-chunk rendering
+   */
+  setWorldBlockGetter(getter: WorldBlockGetter): void {
+    this.worldBlockGetter = getter
   }
 
   /**
@@ -39,7 +53,7 @@ export class ChunkRenderer {
       return
     }
 
-    const chunkMesh = new ChunkMesh(chunk, this.scene)
+    const chunkMesh = new ChunkMesh(chunk, this.scene, this.worldBlockGetter ?? undefined)
     chunkMesh.build()
     this.chunkMeshes.set(key, chunkMesh)
     this.totalChunkCount++
