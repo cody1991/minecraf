@@ -14,6 +14,8 @@ Auto-generated from all feature plans. Last updated: 2025-12-12
 - N/A (内存中生成，无持久化) (006-random-terrain-generation)
 - TypeScript 5.6 + Three.js 0.170.0, Vite 6.0 (007-underwater-display)
 - N/A（无持久化需求） (007-underwater-display)
+- TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3 (008-biome-weather-system)
+- N/A（内存状态，无持久化） (008-biome-weather-system)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -33,9 +35,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 008-biome-weather-system: Added TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3
 - 007-underwater-display: Added TypeScript 5.6 + Three.js 0.170.0, Vite 6.0
 - 006-random-terrain-generation: Added TypeScript 5.6 + Three.js 0.170, Vite 6.0
-- 005-block-textures: Added TypeScript 5.6 + ES2020 + Three.js 0.170.0, Vite 6.0
 
 
 <!-- MANUAL ADDITIONS START -->

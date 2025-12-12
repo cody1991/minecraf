@@ -9,7 +9,7 @@
 
 import * as THREE from 'three'
 import { Chunk } from '../core/Chunk'
-import { BlockType, BLOCK_COLORS, isTransparent } from '../core/Block'
+import { BlockType, BLOCK_COLORS, isTransparent, isCrossPlant } from '../core/Block'
 import { TextureAtlas } from './TextureAtlas'
 
 // Type for world block getter function
@@ -170,7 +170,16 @@ export class ChunkMesh {
       const worldY = worldPos.y + localY
       const worldZ = worldPos.z + localZ
 
-      // Check each face
+      // Handle cross-shaped plants (X pattern)
+      if (isCrossPlant(type)) {
+        vertexCount = this.addCrossPlant(
+          positions, normals, uvs, colors, indices,
+          worldX, worldY, worldZ, type, vertexCount
+        )
+        return
+      }
+
+      // Check each face for regular blocks
       const faces: RenderFace[] = ['top', 'bottom', 'front', 'back', 'left', 'right']
       
       for (const face of faces) {
@@ -220,6 +229,71 @@ export class ChunkMesh {
     })
 
     return { positions, normals, uvs, colors, indices }
+  }
+
+  /**
+   * Add cross-shaped plant geometry (X pattern with 4 faces)
+   */
+  private addCrossPlant(
+    positions: number[],
+    normals: number[],
+    uvs: number[],
+    colors: number[],
+    indices: number[],
+    worldX: number,
+    worldY: number,
+    worldZ: number,
+    type: BlockType,
+    vertexCount: number
+  ): number {
+    const [u1, v1, u2, v2] = this.textureAtlas.getUVsForFace(type, 'front')
+    
+    const color = BLOCK_COLORS[type] ?? 0xffffff
+    const r = ((color >> 16) & 0xff) / 255
+    const g = ((color >> 8) & 0xff) / 255
+    const b = (color & 0xff) / 255
+
+    // Cross pattern: two diagonal quads
+    // Diagonal 1: from (0,0,0) to (1,1,1)
+    // Diagonal 2: from (1,0,0) to (0,1,1)
+    const crossFaces = [
+      // Diagonal 1 - front side
+      [[0, 0, 0], [1, 0, 1], [1, 1, 1], [0, 1, 0]],
+      // Diagonal 1 - back side
+      [[1, 0, 1], [0, 0, 0], [0, 1, 0], [1, 1, 1]],
+      // Diagonal 2 - front side
+      [[1, 0, 0], [0, 0, 1], [0, 1, 1], [1, 1, 0]],
+      // Diagonal 2 - back side
+      [[0, 0, 1], [1, 0, 0], [1, 1, 0], [0, 1, 1]]
+    ]
+
+    for (const faceVerts of crossFaces) {
+      // Add 4 vertices
+      for (let i = 0; i < 4; i++) {
+        const v = faceVerts[i]
+        if (!v || v.length < 3) continue
+        positions.push(worldX + (v[0] ?? 0), worldY + (v[1] ?? 0), worldZ + (v[2] ?? 0))
+        // Use upward normal for better lighting on plants
+        normals.push(0, 1, 0)
+        
+        // UV mapping
+        const quadUV = QUAD_UVS[i]
+        if (!quadUV || quadUV.length < 2) continue
+        const u = u1 + (u2 - u1) * (quadUV[0] ?? 0)
+        const vCoord = v1 + (v2 - v1) * (quadUV[1] ?? 0)
+        uvs.push(u, vCoord)
+        
+        colors.push(r, g, b)
+      }
+
+      // Add indices
+      for (const idx of QUAD_INDICES) {
+        indices.push(vertexCount + idx)
+      }
+      vertexCount += 4
+    }
+
+    return vertexCount
   }
 
   /**

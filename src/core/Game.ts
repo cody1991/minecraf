@@ -2,6 +2,7 @@
  * Game - Main game loop and system management
  * Feature: 002-chunk-terrain-system
  * Feature: 007-underwater-display - Added underwater effect support
+ * Feature: 008-biome-weather-system - Added TimeSystem and EntityManager
  * 
  * Manages the game loop, world, and rendering with chunk-based architecture.
  */
@@ -13,6 +14,12 @@ import { ChunkRenderer } from '../renderer/ChunkRenderer'
 import { ChunkManager } from './ChunkManager'
 import { UnderwaterEffect } from '../renderer/UnderwaterEffect'
 import { Player } from '../player/Player'
+import { TimeSystem } from '../weather/TimeSystem'
+import { EntityManager } from '../entities/EntityManager'
+import { AnimalSpawner } from '../entities/AnimalSpawner'
+import { SkyRenderer } from '../weather/SkyRenderer'
+import { WeatherSystem } from '../weather/WeatherSystem'
+import { RainEffect } from '../weather/RainEffect'
 
 /**
  * Main Game class - manages game loop and core systems
@@ -23,6 +30,12 @@ export class Game {
   private chunkRenderer: ChunkRenderer
   private chunkManager: ChunkManager
   private underwaterEffect: UnderwaterEffect
+  private timeSystem: TimeSystem
+  private entityManager: EntityManager
+  private animalSpawner: AnimalSpawner
+  private skyRenderer: SkyRenderer
+  private weatherSystem: WeatherSystem
+  private rainEffect: RainEffect
   private camera: THREE.PerspectiveCamera
 
   private isRunning: boolean = false
@@ -77,6 +90,39 @@ export class Game {
 
     // Initialize underwater effect
     this.underwaterEffect = new UnderwaterEffect(this.renderer.getScene())
+
+    // Initialize time system (start at morning)
+    this.timeSystem = new TimeSystem(6000)
+
+    // Initialize entity manager
+    this.entityManager = new EntityManager(this.renderer.getScene())
+
+    // Initialize animal spawner
+    this.animalSpawner = new AnimalSpawner(this.entityManager, this.world)
+
+    // Initialize sky renderer
+    this.skyRenderer = new SkyRenderer(this.renderer.getScene())
+
+    // Initialize weather system
+    this.weatherSystem = new WeatherSystem()
+
+    // Initialize rain effect
+    this.rainEffect = new RainEffect(this.renderer.getScene())
+
+    // Connect chunk events to animal spawner
+    this.chunkManager.onChunkLoaded = (cx, cy, cz) => {
+      // Only spawn animals on surface chunks (cy = 2 or 3 typically)
+      if (cy >= 2) {
+        this.animalSpawner.spawnInChunk(cx, cz)
+      }
+    }
+    this.chunkManager.onChunkUnloaded = (cx, cy, cz) => {
+      // Remove entities when chunk is unloaded
+      if (cy >= 2) {
+        this.entityManager.removeChunk(cx, cz)
+        this.animalSpawner.clearChunk(cx, cz)
+      }
+    }
 
     // Initialize camera
     const { width, height } = this.renderer.getSize()
@@ -168,6 +214,35 @@ export class Game {
       this.updateCallback(deltaTime)
     }
 
+    // Update time system
+    this.timeSystem.update(deltaTime)
+
+    // Update entities with collision world
+    this.entityManager.update(deltaTime, this.playerPosition, this.world)
+
+    // Update sky renderer
+    this.skyRenderer.update(this.timeSystem, this.camera.position)
+
+    // Update weather system
+    this.weatherSystem.update(deltaTime)
+
+    // Update rain effect
+    this.rainEffect.setVisible(this.weatherSystem.isRaining())
+    this.rainEffect.setIntensity(this.weatherSystem.getRainIntensity())
+    this.rainEffect.setPlayerPosition(this.playerPosition)
+    if (this.player) {
+      this.rainEffect.setPlayerSubmerged(this.player.isSubmerged)
+    }
+    this.rainEffect.update(deltaTime)
+
+    // Update sky renderer rain state
+    this.skyRenderer.setRaining(this.weatherSystem.isRaining())
+
+    // Update ambient light based on time and weather
+    const timeAmbient = this.timeSystem.getAmbientIntensity()
+    const weatherDim = 1 - this.weatherSystem.getAmbientDimFactor()
+    this.renderer.setAmbientIntensity(timeAmbient * weatherDim)
+
     // Update underwater effect based on player state
     if (this.player) {
       this.underwaterEffect.update(this.player.isSubmerged)
@@ -201,7 +276,10 @@ export class Game {
     if (fpsElement) {
       const loadedChunks = this.chunkManager.getLoadedCount()
       const visibleChunks = this.chunkRenderer.getVisibleChunkCount()
-      fpsElement.textContent = `FPS: ${this.currentFps} | Chunks: ${visibleChunks}/${loadedChunks}`
+      const entityCount = this.entityManager.getCount()
+      const timeStr = this.timeSystem.getFormattedTime()
+      const weather = this.weatherSystem.getWeatherName()
+      fpsElement.textContent = `FPS: ${this.currentFps} | Chunks: ${visibleChunks}/${loadedChunks} | Entities: ${entityCount} | ${timeStr} | ${weather}`
     }
   }
 
@@ -248,6 +326,34 @@ export class Game {
   }
 
   /**
+   * Get the time system
+   */
+  getTimeSystem(): TimeSystem {
+    return this.timeSystem
+  }
+
+  /**
+   * Get the entity manager
+   */
+  getEntityManager(): EntityManager {
+    return this.entityManager
+  }
+
+  /**
+   * Get the sky renderer
+   */
+  getSkyRenderer(): SkyRenderer {
+    return this.skyRenderer
+  }
+
+  /**
+   * Get the weather system
+   */
+  getWeatherSystem(): WeatherSystem {
+    return this.weatherSystem
+  }
+
+  /**
    * Get current FPS
    */
   getFps(): number {
@@ -260,6 +366,9 @@ export class Game {
   dispose(): void {
     this.stop()
     window.removeEventListener('resize', this.handleResize.bind(this))
+    this.rainEffect.dispose()
+    this.skyRenderer.dispose()
+    this.entityManager.dispose()
     this.underwaterEffect.dispose()
     this.chunkRenderer.dispose()
     this.world.dispose()

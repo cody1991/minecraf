@@ -27,6 +27,7 @@ import {
 import { TerrainGenerator } from '../terrain/TerrainGenerator'
 import { CaveGenerator } from '../terrain/CaveGenerator'
 import { ColosseumConfig } from '../terrain/ColosseumGenerator'
+import { BiomeType } from '../terrain/BiomeTypes'
 
 /**
  * World configuration
@@ -237,6 +238,13 @@ export class World {
    */
   getHeightAt(worldX: number, worldZ: number): number {
     return this.terrainGenerator.getHeightAt(worldX, worldZ)
+  }
+
+  /**
+   * Get biome type at world X,Z coordinates
+   */
+  getBiomeAt(worldX: number, worldZ: number): BiomeType {
+    return this.terrainGenerator.getBiomeAt(worldX, worldZ)
   }
 
   /**

@@ -18,7 +18,15 @@ export enum BlockType {
   LEAVES = 10,
   LOG = 11,
   PLANKS = 12,
-  SNOW = 13
+  SNOW = 13,
+  // Plant types (008-biome-weather-system)
+  FLOWER_RED = 14,
+  FLOWER_YELLOW = 15,
+  TALL_GRASS = 16,
+  MUSHROOM_RED = 17,
+  MUSHROOM_BROWN = 18,
+  DEAD_BUSH = 19,
+  CACTUS = 20
 }
 
 /**
@@ -50,7 +58,15 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.LEAVES]: '树叶',
   [BlockType.LOG]: '原木',
   [BlockType.PLANKS]: '木板',
-  [BlockType.SNOW]: '雪'
+  [BlockType.SNOW]: '雪',
+  // Plant types (008-biome-weather-system)
+  [BlockType.FLOWER_RED]: '红花',
+  [BlockType.FLOWER_YELLOW]: '黄花',
+  [BlockType.TALL_GRASS]: '高草',
+  [BlockType.MUSHROOM_RED]: '红蘑菇',
+  [BlockType.MUSHROOM_BROWN]: '棕蘑菇',
+  [BlockType.DEAD_BUSH]: '枯灌木',
+  [BlockType.CACTUS]: '仙人掌'
 }
 
 /**
@@ -70,7 +86,15 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.LEAVES]: 0x3d9140,
   [BlockType.LOG]: 0x6b4423,
   [BlockType.PLANKS]: 0xbc8f5a,
-  [BlockType.SNOW]: 0xfafafa
+  [BlockType.SNOW]: 0xfafafa,
+  // Plant types (008-biome-weather-system)
+  [BlockType.FLOWER_RED]: 0xff4444,
+  [BlockType.FLOWER_YELLOW]: 0xffff44,
+  [BlockType.TALL_GRASS]: 0x5a8f3d,
+  [BlockType.MUSHROOM_RED]: 0xcc3333,
+  [BlockType.MUSHROOM_BROWN]: 0x8b6914,
+  [BlockType.DEAD_BUSH]: 0x8b6b47,
+  [BlockType.CACTUS]: 0x2d6b2d
 }
 
 /**
@@ -188,6 +212,63 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     transparent: false,
     opacity: 1,
     solid: true
+  },
+  // Plant types (008-biome-weather-system)
+  [BlockType.FLOWER_RED]: {
+    name: '红花',
+    nameEn: 'Red Flower',
+    color: 0xff4444,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.FLOWER_YELLOW]: {
+    name: '黄花',
+    nameEn: 'Yellow Flower',
+    color: 0xffff44,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.TALL_GRASS]: {
+    name: '高草',
+    nameEn: 'Tall Grass',
+    color: 0x5a8f3d,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.MUSHROOM_RED]: {
+    name: '红蘑菇',
+    nameEn: 'Red Mushroom',
+    color: 0xcc3333,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.MUSHROOM_BROWN]: {
+    name: '棕蘑菇',
+    nameEn: 'Brown Mushroom',
+    color: 0x8b6914,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DEAD_BUSH]: {
+    name: '枯灌木',
+    nameEn: 'Dead Bush',
+    color: 0x8b6b47,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.CACTUS]: {
+    name: '仙人掌',
+    nameEn: 'Cactus',
+    color: 0x2d6b2d,
+    transparent: true,
+    opacity: 1,
+    solid: true  // Cactus is solid for collision
   }
 }
 
@@ -218,6 +299,25 @@ export function isTransparent(type: BlockType): boolean {
  */
 export function getBlockOpacity(type: BlockType): number {
   return BLOCK_PROPERTIES[type]?.opacity ?? 1
+}
+
+/**
+ * Check if a block type is a cross-shaped plant (rendered with X pattern)
+ */
+export function isCrossPlant(type: BlockType): boolean {
+  return type === BlockType.FLOWER_RED ||
+         type === BlockType.FLOWER_YELLOW ||
+         type === BlockType.TALL_GRASS ||
+         type === BlockType.MUSHROOM_RED ||
+         type === BlockType.MUSHROOM_BROWN ||
+         type === BlockType.DEAD_BUSH
+}
+
+/**
+ * Check if a block type is a plant
+ */
+export function isPlant(type: BlockType): boolean {
+  return type >= BlockType.FLOWER_RED && type <= BlockType.CACTUS
 }
 
 /**

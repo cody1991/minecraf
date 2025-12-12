@@ -23,6 +23,7 @@ import { CaveGenerator } from './CaveGenerator'
 import { ColosseumGenerator, ColosseumConfig } from './ColosseumGenerator'
 import { BiomeGenerator } from './BiomeGenerator'
 import { BIOME_CONFIGS } from './BiomeTypes'
+import { PlantGenerator } from './PlantGenerator'
 
 /**
  * TerrainGenerator creates chunk block data using noise-based terrain generation
@@ -33,6 +34,7 @@ export class TerrainGenerator {
 
   private noise: NoiseGenerator
   private biomeGenerator: BiomeGenerator
+  private plantGenerator: PlantGenerator
   private caveGenerator: CaveGenerator | null = null
   private colosseumGenerator: ColosseumGenerator | null = null
 
@@ -45,6 +47,7 @@ export class TerrainGenerator {
     this.config = { ...DEFAULT_TERRAIN_CONFIG, ...config }
     this.noise = new NoiseGenerator(seed)
     this.biomeGenerator = new BiomeGenerator(seed)
+    this.plantGenerator = new PlantGenerator(seed)
   }
 
   /**
@@ -85,6 +88,9 @@ export class TerrainGenerator {
     const worldOffsetY = cy * CHUNK_SIZE
     const worldOffsetZ = cz * CHUNK_SIZE
 
+    // Track surface positions for plant generation
+    const surfacePositions: Array<{x: number, z: number, y: number, biome: import('./BiomeTypes').BiomeType, surface: BlockType}> = []
+
     for (let localX = 0; localX < CHUNK_SIZE; localX++) {
       for (let localZ = 0; localZ < CHUNK_SIZE; localZ++) {
         const worldX = worldOffsetX + localX
@@ -92,6 +98,7 @@ export class TerrainGenerator {
 
         // Get terrain height at this X,Z position
         const terrainHeight = this.getHeightAt(worldX, worldZ)
+        const biome = this.biomeGenerator.getBiomeAt(worldX, worldZ)
 
         for (let localY = 0; localY < CHUNK_SIZE; localY++) {
           const worldY = worldOffsetY + localY
@@ -100,11 +107,72 @@ export class TerrainGenerator {
           // Determine block type based on height
           const blockType = this.getBlockTypeAt(worldX, worldY, worldZ, terrainHeight)
           blocks[index] = blockType
+
+          // Track surface for plant generation
+          if (worldY === terrainHeight && blockType !== BlockType.AIR && blockType !== BlockType.WATER) {
+            surfacePositions.push({
+              x: localX,
+              z: localZ,
+              y: localY + 1, // Plant goes above surface
+              biome,
+              surface: blockType
+            })
+          }
         }
       }
     }
 
+    // Generate plants on surface
+    this.generatePlants(blocks, surfacePositions, worldOffsetX, worldOffsetZ)
+
     return blocks
+  }
+
+  /**
+   * Generate plants on tracked surface positions
+   */
+  private generatePlants(
+    blocks: Uint8Array,
+    surfaces: Array<{x: number, z: number, y: number, biome: import('./BiomeTypes').BiomeType, surface: BlockType}>,
+    worldOffsetX: number,
+    worldOffsetZ: number
+  ): void {
+    for (const pos of surfaces) {
+      // Skip if plant position is outside this chunk's Y range
+      if (pos.y < 0 || pos.y >= CHUNK_SIZE) continue
+
+      // Skip if not valid surface for plants
+      if (!this.plantGenerator.isValidSurface(pos.surface)) continue
+
+      // Calculate actual world coordinates
+      const worldX = worldOffsetX + pos.x
+      const worldZ = worldOffsetZ + pos.z
+      
+      // Skip spawn area (Colosseum flat radius)
+      const distanceFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ)
+      if (distanceFromOrigin < COLOSSEUM_FLAT_RADIUS) continue
+
+      // Check if plant should spawn
+      if (!this.plantGenerator.shouldSpawnPlant(worldX, worldZ, pos.biome)) continue
+
+      // Get plant type
+      const plantType = this.plantGenerator.getPlantType(worldX, worldZ, pos.biome, pos.surface)
+      if (!plantType) continue
+
+      // Place plant
+      const index = blockIndex(pos.x, pos.y, pos.z)
+      
+      // Handle cactus (can be multiple blocks tall)
+      if (plantType === BlockType.CACTUS) {
+        const height = this.plantGenerator.getCactusHeight(worldX, worldZ)
+        for (let h = 0; h < height && pos.y + h < CHUNK_SIZE; h++) {
+          const cactusIndex = blockIndex(pos.x, pos.y + h, pos.z)
+          blocks[cactusIndex] = BlockType.CACTUS
+        }
+      } else {
+        blocks[index] = plantType
+      }
+    }
   }
 
   /**
@@ -239,6 +307,13 @@ export class TerrainGenerator {
    */
   getMaxHeight(): number {
     return this.config.baseHeight + this.config.heightVariation
+  }
+
+  /**
+   * Get biome at world coordinates
+   */
+  getBiomeAt(worldX: number, worldZ: number): import('./BiomeTypes').BiomeType {
+    return this.biomeGenerator.getBiomeAt(worldX, worldZ)
   }
 
   /**

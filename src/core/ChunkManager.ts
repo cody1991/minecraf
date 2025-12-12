@@ -37,6 +37,10 @@ export class ChunkManager {
   private lastPlayerChunkX: number = Infinity
   private lastPlayerChunkZ: number = Infinity
 
+  // Callbacks for chunk events
+  public onChunkLoaded: ((cx: number, cy: number, cz: number) => void) | null = null
+  public onChunkUnloaded: ((cx: number, cy: number, cz: number) => void) | null = null
+
   constructor(
     world: World,
     chunkRenderer: ChunkRenderer,
@@ -151,6 +155,11 @@ export class ChunkManager {
 
     // Mark as loaded
     this.loadedChunks.add(key)
+
+    // Notify listeners
+    if (this.onChunkLoaded) {
+      this.onChunkLoaded(cx, cy, cz)
+    }
   }
 
   /**
@@ -159,6 +168,11 @@ export class ChunkManager {
   private unloadChunk(cx: number, cy: number, cz: number): void {
     const key = chunkKey(cx, cy, cz)
     if (!this.loadedChunks.has(key)) return
+
+    // Notify listeners before unloading
+    if (this.onChunkUnloaded) {
+      this.onChunkUnloaded(cx, cy, cz)
+    }
 
     // Get chunk from world
     const chunk = this.world.getChunk(cx, cy, cz)
