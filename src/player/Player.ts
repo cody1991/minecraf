@@ -1,5 +1,10 @@
+/**
+ * Player class - represents the player entity
+ * Feature: 005-block-textures - Extended block selection support
+ */
+
 import * as THREE from 'three'
-import { BlockType } from '../core/Block'
+import { BlockType, PLACEABLE_BLOCKS } from '../core/Block'
 
 /**
  * Player constants
@@ -84,11 +89,60 @@ export class Player {
   }
 
   /**
-   * Set selected block type (1-5 maps to GRASS-SAND)
+   * Set selected block by key number (1-9, 0)
+   * Maps keyboard numbers to PLACEABLE_BLOCKS array
+   * 1 = index 0, 2 = index 1, ..., 9 = index 8, 0 = index 9
    */
-  setSelectedBlockIndex(index: number): void {
-    if (index >= 1 && index <= 5) {
-      this.selectedBlockType = index as BlockType
+  setSelectedBlockByKey(key: string): boolean {
+    let index: number
+
+    if (key >= '1' && key <= '9') {
+      index = parseInt(key) - 1 // '1' -> 0, '9' -> 8
+    } else if (key === '0') {
+      index = 9 // '0' -> 9
+    } else {
+      return false
     }
+
+    return this.setSelectedBlockIndex(index)
+  }
+
+  /**
+   * Set selected block by index in PLACEABLE_BLOCKS array
+   */
+  setSelectedBlockIndex(index: number): boolean {
+    if (index >= 0 && index < PLACEABLE_BLOCKS.length) {
+      const blockType = PLACEABLE_BLOCKS[index]
+      if (blockType !== undefined) {
+        this.selectedBlockType = blockType
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
+   * Get the index of currently selected block in PLACEABLE_BLOCKS
+   */
+  getSelectedBlockIndex(): number {
+    return PLACEABLE_BLOCKS.indexOf(this.selectedBlockType)
+  }
+
+  /**
+   * Cycle to next block type
+   */
+  selectNextBlock(): void {
+    const currentIndex = this.getSelectedBlockIndex()
+    const nextIndex = (currentIndex + 1) % PLACEABLE_BLOCKS.length
+    this.setSelectedBlockIndex(nextIndex)
+  }
+
+  /**
+   * Cycle to previous block type
+   */
+  selectPreviousBlock(): void {
+    const currentIndex = this.getSelectedBlockIndex()
+    const prevIndex = (currentIndex - 1 + PLACEABLE_BLOCKS.length) % PLACEABLE_BLOCKS.length
+    this.setSelectedBlockIndex(prevIndex)
   }
 }

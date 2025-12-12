@@ -22,7 +22,8 @@ export interface InputState {
   leftClick: boolean
   rightClick: boolean
 
-  // Number keys for block selection (1-5)
+  // Number keys for block selection (1-9, 0)
+  // Returns index 0-9 where 1->0, 2->1, ..., 9->8, 0->9
   numberKey: number | null
 }
 

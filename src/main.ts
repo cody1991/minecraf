@@ -68,10 +68,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update player movement
       movement.update(input, deltaTime)
 
-      // Handle block type selection (1-5 keys)
+      // Handle block type selection (1-9, 0 keys)
       if (input.numberKey !== null) {
-        player.setSelectedBlockIndex(input.numberKey)
-        blockSelector.updateSelection(player.selectedBlockType)
+        if (player.setSelectedBlockIndex(input.numberKey)) {
+          blockSelector.updateSelection(player.selectedBlockType)
+        }
       }
 
       // Handle block destruction (left click)
@@ -102,5 +103,5 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('World seed:', game.getWorld().seed)
   console.log('Click to start, WASD to move, mouse to look around')
   console.log('Left click to destroy, right click to place blocks')
-  console.log('Press 1-5 to switch block types')
+  console.log('Press 1-9, 0 to switch block types (13 blocks available)')
 })
