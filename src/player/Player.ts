@@ -23,6 +23,9 @@ export class Player {
   public readonly width = PLAYER_WIDTH
   public readonly eyeHeight = PLAYER_EYE_HEIGHT
 
+  // Physics state
+  public isGrounded: boolean = false
+
   // Currently selected block type for placing
   public selectedBlockType: BlockType = BlockType.GRASS
 

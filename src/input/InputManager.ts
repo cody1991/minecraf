@@ -11,6 +11,9 @@ export interface InputState {
   left: boolean
   right: boolean
 
+  // Jump key
+  jump: boolean
+
   // Mouse movement (delta since last frame)
   mouseX: number
   mouseY: number
@@ -44,6 +47,7 @@ export class InputManager {
       backward: this.keyboardInput.isKeyDown('KeyS') || this.keyboardInput.isKeyDown('ArrowDown'),
       left: this.keyboardInput.isKeyDown('KeyA') || this.keyboardInput.isKeyDown('ArrowLeft'),
       right: this.keyboardInput.isKeyDown('KeyD') || this.keyboardInput.isKeyDown('ArrowRight'),
+      jump: this.keyboardInput.isKeyDown('Space'),
       mouseX: this.mouseInput.getMouseDeltaX(),
       mouseY: this.mouseInput.getMouseDeltaY(),
       leftClick: this.mouseInput.wasLeftClicked(),
