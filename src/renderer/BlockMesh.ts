@@ -35,10 +35,8 @@ export class BlockMesh {
     // Create box geometry for blocks
     const geometry = new THREE.BoxGeometry(1, 1, 1)
 
-    // Create material with vertex colors
-    const material = new THREE.MeshLambertMaterial({
-      vertexColors: true
-    })
+    // Create material - instance colors work automatically with InstancedMesh
+    const material = new THREE.MeshLambertMaterial()
 
     // Create instanced mesh
     this.mesh = new THREE.InstancedMesh(geometry, material, this.maxInstances)
