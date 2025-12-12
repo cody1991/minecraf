@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Player, PLAYER_SPEED, MOUSE_SENSITIVITY, SPRINT_MULTIPLIER } from './Player'
+import { Player, PLAYER_SPEED, MOUSE_SENSITIVITY, SPRINT_MULTIPLIER, SWIM_SPEED_MULTIPLIER } from './Player'
 import { World } from '../core/World'
 import { InputState } from '../input/InputManager'
 import { PhysicsSystem } from '../physics/PhysicsSystem'
@@ -31,19 +31,27 @@ export class Movement {
     // Update rotation from mouse input
     this.updateRotation(input.mouseX, input.mouseY)
 
-    // Handle jump input
-    if (input.jump) {
+    // Check if in water for physics
+    const inWater = this.player.isInWater
+
+    // Handle jump input (only on land)
+    if (input.jump && !inWater) {
       this.physics.applyJump(this.getPhysicsBody())
     }
 
     // Calculate horizontal movement velocity
     this.updateHorizontalVelocity(input)
 
-    // Apply physics (gravity, collision detection, position updates)
-    this.physics.update(this.getPhysicsBody(), this.world, deltaTime)
+    // Apply physics with swim controls
+    // In water: space = swim up, shift = swim down
+    const swimUp = inWater && input.jump
+    const swimDown = inWater && input.sprint
+    this.physics.update(this.getPhysicsBody(), this.world, deltaTime, swimUp, swimDown)
 
     // Sync physics body state back to player
     this.player.isGrounded = this.getPhysicsBody().isGrounded
+    this.player.isInWater = this.getPhysicsBody().isInWater ?? false
+    this.player.isSubmerged = this.getPhysicsBody().isSubmerged ?? false
   }
 
   /**
@@ -71,7 +79,8 @@ export class Movement {
   /**
    * Update horizontal velocity based on input
    * Velocity is set directly (not accumulated) for responsive controls
-   * Applies sprint multiplier when sprint key is held
+   * Applies sprint multiplier when sprint key is held (on land)
+   * Applies swim speed multiplier when in water
    */
   private updateHorizontalVelocity(input: InputState): void {
     // Calculate movement direction
@@ -94,8 +103,17 @@ export class Movement {
     if (moveDirection.lengthSq() > 0) {
       moveDirection.normalize()
       
-      // Apply sprint multiplier if sprinting
-      const speed = input.sprint ? PLAYER_SPEED * SPRINT_MULTIPLIER : PLAYER_SPEED
+      // Determine speed based on state
+      let speed = PLAYER_SPEED
+      
+      if (this.player.isInWater) {
+        // In water: slower movement, shift is for diving not sprinting
+        speed = PLAYER_SPEED * SWIM_SPEED_MULTIPLIER
+      } else if (input.sprint) {
+        // On land: sprint multiplier
+        speed = PLAYER_SPEED * SPRINT_MULTIPLIER
+      }
+      
       moveDirection.multiplyScalar(speed)
       
       this.player.velocity.x = moveDirection.x

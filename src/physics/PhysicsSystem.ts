@@ -1,6 +1,7 @@
 /**
  * Physics System
  * Feature: 003-physics-collision
+ * Updated: 006-random-terrain-generation - Added water physics
  * 
  * Main physics system that coordinates gravity, collision detection,
  * and movement resolution for physics bodies.
@@ -8,8 +9,8 @@
 
 import { IPhysicsBody, ICollisionWorld } from './PhysicsTypes'
 import { PhysicsConfig, DEFAULT_PHYSICS_CONFIG, WORLD_MIN_Y } from './PhysicsConstants'
-import { applyGravity, resetVerticalVelocity } from './Gravity'
-import { checkGrounded, resolveYCollision, resolveXCollision, resolveZCollision } from './Collision'
+import { applyGravity, applyWaterPhysics, resetVerticalVelocity } from './Gravity'
+import { checkGrounded, resolveYCollision, resolveXCollision, resolveZCollision, checkInWater, checkSubmerged } from './Collision'
 
 /**
  * Physics System class
@@ -29,10 +30,24 @@ export class PhysicsSystem {
    * @param body - The physics body to update
    * @param world - The collision world for queries
    * @param deltaTime - Time elapsed since last frame in seconds
+   * @param swimUp - Whether player is pressing swim up (space)
+   * @param swimDown - Whether player is pressing swim down (shift)
    */
-  update(body: IPhysicsBody, world: ICollisionWorld, deltaTime: number): void {
-    // Step 1: Apply gravity
-    applyGravity(body, deltaTime, this.config.gravity)
+  update(body: IPhysicsBody, world: ICollisionWorld, deltaTime: number, swimUp: boolean = false, swimDown: boolean = false): void {
+    // Check water state
+    const inWater = checkInWater(body, world)
+    const submerged = checkSubmerged(body, world)
+    
+    // Update body water state
+    body.isInWater = inWater
+    body.isSubmerged = submerged
+
+    // Step 1: Apply gravity or water physics
+    if (inWater) {
+      applyWaterPhysics(body, deltaTime, this.config.waterGravity, this.config.waterBuoyancy, this.config.waterTerminalVelocity, swimUp, swimDown)
+    } else {
+      applyGravity(body, deltaTime, this.config.gravity)
+    }
 
     // Step 2: Calculate movement from velocity
     const deltaX = body.velocity.x * deltaTime
@@ -61,20 +76,25 @@ export class PhysicsSystem {
     // Step 5: Handle world bottom boundary
     this.handleWorldBoundary(body)
 
-    // Step 6: Reset vertical velocity if grounded and falling
-    if (body.isGrounded && body.velocity.y < 0) {
+    // Step 6: Reset vertical velocity if grounded and falling (not in water)
+    if (!inWater && body.isGrounded && body.velocity.y < 0) {
       resetVerticalVelocity(body)
     }
   }
 
   /**
    * Apply jump impulse to a body
-   * Only succeeds if the body is grounded
+   * Only succeeds if the body is grounded or in water
    * 
    * @param body - The physics body to apply jump to
    * @returns true if jump was applied, false if not grounded
    */
   applyJump(body: IPhysicsBody): boolean {
+    // In water, jump is handled by swim up
+    if (body.isInWater) {
+      return false
+    }
+    
     if (!body.isGrounded) {
       return false
     }

@@ -26,6 +26,12 @@ export interface IPhysicsBody {
   
   /** Whether the entity is standing on solid ground */
   isGrounded: boolean
+  
+  /** Whether the entity is in water */
+  isInWater?: boolean
+  
+  /** Whether the entity's head is underwater */
+  isSubmerged?: boolean
 }
 
 /**

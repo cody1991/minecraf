@@ -195,6 +195,10 @@ export class TerrainGenerator {
 
     // Check for caves (if enabled)
     if (this.caveGenerator && this.caveGenerator.shouldCarve(worldX, worldY, worldZ)) {
+      // If cave is below water level, fill with water instead of air
+      if (worldY <= WATER_LEVEL) {
+        return BlockType.WATER
+      }
       return BlockType.AIR
     }
 
@@ -206,7 +210,11 @@ export class TerrainGenerator {
     const biomeConfig = BIOME_CONFIGS[biome]
 
     // Surface layer = biome-specific block
+    // If underwater, use sand instead of grass
     if (depthFromSurface === 0) {
+      if (terrainHeight < WATER_LEVEL) {
+        return BlockType.SAND // Underwater floor is sand
+      }
       return biomeConfig.surfaceBlock
     }
 

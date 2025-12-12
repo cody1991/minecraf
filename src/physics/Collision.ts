@@ -1,6 +1,7 @@
 /**
  * Collision Detection Module
  * Feature: 003-physics-collision
+ * Updated: 006-random-terrain-generation - Added water detection
  * 
  * Handles collision detection between physics bodies and the voxel world.
  */
@@ -8,7 +9,7 @@
 import { IPhysicsBody, ICollisionWorld, AxisCollisionResult } from './PhysicsTypes'
 import { AABB, createAABB, createBlockAABB, aabbIntersects } from './AABB'
 import { GROUND_CHECK_OFFSET, WORLD_MIN_Y } from './PhysicsConstants'
-import { isSolid } from '../core/Block'
+import { isSolid, BlockType } from '../core/Block'
 
 /**
  * Check if a physics body is standing on solid ground
@@ -305,4 +306,56 @@ export function resolveZCollision(
   }
   
   return { collided, newPosition: newZ, newVelocity }
+}
+
+/**
+ * Check if a physics body is in water (any part of body touching water)
+ * 
+ * @param body - The physics body to check
+ * @param world - The collision world to query
+ * @returns true if any part of the body is in water
+ */
+export function checkInWater(body: IPhysicsBody, world: ICollisionWorld): boolean {
+  const halfWidth = body.width / 2
+  const halfHeight = body.height / 2
+  
+  // Check blocks around the body's lower half (feet to waist)
+  const minBlockX = Math.floor(body.position.x - halfWidth)
+  const maxBlockX = Math.floor(body.position.x + halfWidth)
+  const minBlockZ = Math.floor(body.position.z - halfWidth)
+  const maxBlockZ = Math.floor(body.position.z + halfWidth)
+  
+  // Check from feet to center
+  const minBlockY = Math.floor(body.position.y - halfHeight)
+  const maxBlockY = Math.floor(body.position.y)
+  
+  for (let by = minBlockY; by <= maxBlockY; by++) {
+    for (let bx = minBlockX; bx <= maxBlockX; bx++) {
+      for (let bz = minBlockZ; bz <= maxBlockZ; bz++) {
+        if (world.getBlock(bx, by, bz) === BlockType.WATER) {
+          return true
+        }
+      }
+    }
+  }
+  
+  return false
+}
+
+/**
+ * Check if a physics body's head is submerged in water
+ * 
+ * @param body - The physics body to check
+ * @param world - The collision world to query
+ * @returns true if the body's head is underwater
+ */
+export function checkSubmerged(body: IPhysicsBody, world: ICollisionWorld): boolean {
+  const halfHeight = body.height / 2
+  
+  // Check block at head level (top of body)
+  const headY = Math.floor(body.position.y + halfHeight * 0.8) // Slightly below top
+  const headX = Math.floor(body.position.x)
+  const headZ = Math.floor(body.position.z)
+  
+  return world.getBlock(headX, headY, headZ) === BlockType.WATER
 }

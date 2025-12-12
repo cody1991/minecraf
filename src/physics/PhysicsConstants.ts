@@ -49,6 +49,13 @@ export const WORLD_MIN_Y = 0
 export const WORLD_MAX_Y = 256
 
 /**
+ * Water physics constants
+ */
+export const WATER_GRAVITY = 4 // Reduced gravity in water
+export const WATER_TERMINAL_VELOCITY = 8 // Max sinking speed in water
+export const WATER_BUOYANCY = 8 // Upward force when submerged
+
+/**
  * Physics configuration interface
  */
 export interface PhysicsConfig {
@@ -56,6 +63,9 @@ export interface PhysicsConfig {
   jumpVelocity: number
   terminalVelocity: number
   groundCheckOffset: number
+  waterGravity: number
+  waterTerminalVelocity: number
+  waterBuoyancy: number
 }
 
 /**
@@ -65,5 +75,8 @@ export const DEFAULT_PHYSICS_CONFIG: PhysicsConfig = {
   gravity: GRAVITY,
   jumpVelocity: JUMP_VELOCITY,
   terminalVelocity: TERMINAL_VELOCITY,
-  groundCheckOffset: GROUND_CHECK_OFFSET
+  groundCheckOffset: GROUND_CHECK_OFFSET,
+  waterGravity: WATER_GRAVITY,
+  waterTerminalVelocity: WATER_TERMINAL_VELOCITY,
+  waterBuoyancy: WATER_BUOYANCY
 }

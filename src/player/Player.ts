@@ -18,6 +18,18 @@ export const MOUSE_SENSITIVITY = 0.002
 /** Sprint speed multiplier (1.5x normal speed) */
 export const SPRINT_MULTIPLIER = 1.5
 
+/** Swimming speed multiplier (0.5x normal speed - slower in water) */
+export const SWIM_SPEED_MULTIPLIER = 0.5
+
+/** Vertical swim speed when pressing space/shift in water */
+export const SWIM_VERTICAL_SPEED = 3.0
+
+/** Water buoyancy force (upward acceleration in water) */
+export const WATER_BUOYANCY = 8.0
+
+/** Water drag (slows down vertical movement in water) */
+export const WATER_DRAG = 0.8
+
 /**
  * Player class - represents the player entity
  */
@@ -33,6 +45,8 @@ export class Player {
 
   // Physics state
   public isGrounded: boolean = false
+  public isInWater: boolean = false
+  public isSubmerged: boolean = false // Head underwater
 
   // Currently selected block type for placing
   public selectedBlockType: BlockType = BlockType.GRASS
