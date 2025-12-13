@@ -303,6 +303,7 @@ export class World {
     for (const key of this.dirtyChunks) {
       const chunk = this.chunks.get(key)
       if (chunk) {
+        chunk.isDirty = true  // Ensure chunk is marked dirty
         dirty.push(chunk)
       }
     }

@@ -95,6 +95,7 @@ export class ChunkMesh {
   private chunk: Chunk
   private opaqueMesh: THREE.Mesh | null = null
   private transparentMesh: THREE.Mesh | null = null
+  private waterMesh: THREE.Mesh | null = null
   private scene: THREE.Scene
   private textureAtlas: TextureAtlas
   private worldBlockGetter: WorldBlockGetter | null = null
@@ -119,20 +120,27 @@ export class ChunkMesh {
       return
     }
 
-    // Build geometry data
-    const opaqueData = this.buildGeometryData(false)
-    const transparentData = this.buildGeometryData(true)
+    // Build geometry data for different render passes
+    const opaqueData = this.buildGeometryData('opaque')
+    const transparentData = this.buildGeometryData('transparent')
+    const waterData = this.buildGeometryData('water')
 
     // Create opaque mesh
     if (opaqueData.positions.length > 0) {
-      this.opaqueMesh = this.createMesh(opaqueData, false)
+      this.opaqueMesh = this.createMesh(opaqueData, 'opaque')
       this.scene.add(this.opaqueMesh)
     }
 
-    // Create transparent mesh
+    // Create transparent mesh (leaves, glass, plants)
     if (transparentData.positions.length > 0) {
-      this.transparentMesh = this.createMesh(transparentData, true)
+      this.transparentMesh = this.createMesh(transparentData, 'transparent')
       this.scene.add(this.transparentMesh)
+    }
+
+    // Create water mesh (separate for better rendering)
+    if (waterData.positions.length > 0) {
+      this.waterMesh = this.createMesh(waterData, 'water')
+      this.scene.add(this.waterMesh)
     }
 
     // Store reference in chunk (use opaque mesh as primary)
@@ -143,7 +151,7 @@ export class ChunkMesh {
   /**
    * Build geometry data for visible faces
    */
-  private buildGeometryData(transparentOnly: boolean): {
+  private buildGeometryData(renderPass: 'opaque' | 'transparent' | 'water'): {
     positions: number[]
     normals: number[]
     uvs: number[]
@@ -160,10 +168,16 @@ export class ChunkMesh {
     let vertexCount = 0
 
     this.chunk.forEachSolidBlock((localX, localY, localZ, type) => {
-      // Filter by transparency
+      // Filter blocks by render pass
+      const isWater = type === BlockType.WATER
       const blockTransparent = isTransparent(type)
-      if (blockTransparent !== transparentOnly) {
-        return
+      
+      if (renderPass === 'water') {
+        if (!isWater) return
+      } else if (renderPass === 'transparent') {
+        if (!blockTransparent || isWater) return
+      } else { // opaque
+        if (blockTransparent) return
       }
 
       const worldX = worldPos.x + localX
@@ -379,7 +393,7 @@ export class ChunkMesh {
    */
   private createMesh(
     data: { positions: number[]; normals: number[]; uvs: number[]; colors: number[]; indices: number[] },
-    transparent: boolean
+    renderPass: 'opaque' | 'transparent' | 'water'
   ): THREE.Mesh {
     const geometry = new THREE.BufferGeometry()
     
@@ -389,19 +403,52 @@ export class ChunkMesh {
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(data.colors, 3))
     geometry.setIndex(data.indices)
 
-    const material = new THREE.MeshLambertMaterial({
-      map: this.textureAtlas.getTexture(),
-      vertexColors: false, // Use texture colors, not vertex colors
-      transparent: transparent,
-      opacity: transparent ? 0.8 : 1.0,
-      side: transparent ? THREE.DoubleSide : THREE.FrontSide,
-      alphaTest: transparent ? 0.1 : 0,
-      depthWrite: !transparent
-    })
+    let material: THREE.MeshLambertMaterial
+
+    if (renderPass === 'opaque') {
+      material = new THREE.MeshLambertMaterial({
+        map: this.textureAtlas.getTexture(),
+        vertexColors: false,
+        transparent: false,
+        side: THREE.FrontSide
+      })
+    } else if (renderPass === 'water') {
+      // Water: semi-transparent, write to depth buffer with polygon offset
+      material = new THREE.MeshLambertMaterial({
+        map: this.textureAtlas.getTexture(),
+        vertexColors: false,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide,
+        depthWrite: true,  // Write to depth to prevent z-fighting with other water
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
+      })
+    } else {
+      // Transparent (leaves, glass, plants): use alpha test for cutout
+      material = new THREE.MeshLambertMaterial({
+        map: this.textureAtlas.getTexture(),
+        vertexColors: false,
+        transparent: true,
+        opacity: 0.9,
+        side: THREE.DoubleSide,
+        alphaTest: 0.5,  // Higher alpha test for cleaner cutout
+        depthWrite: true  // Enable depth write to prevent z-fighting
+      })
+    }
 
     const mesh = new THREE.Mesh(geometry, material)
     mesh.frustumCulled = false // We do our own frustum culling at chunk level
-    mesh.renderOrder = transparent ? 1 : 0 // Render transparent after opaque
+    
+    // Set render order: opaque (0) -> transparent (1) -> water (2)
+    if (renderPass === 'opaque') {
+      mesh.renderOrder = 0
+    } else if (renderPass === 'transparent') {
+      mesh.renderOrder = 1
+    } else {
+      mesh.renderOrder = 2
+    }
 
     return mesh
   }
@@ -430,6 +477,13 @@ export class ChunkMesh {
   }
 
   /**
+   * Get the water mesh
+   */
+  getWaterMesh(): THREE.Mesh | null {
+    return this.waterMesh
+  }
+
+  /**
    * Set visibility of the mesh
    */
   setVisible(visible: boolean): void {
@@ -438,6 +492,9 @@ export class ChunkMesh {
     }
     if (this.transparentMesh) {
       this.transparentMesh.visible = visible
+    }
+    if (this.waterMesh) {
+      this.waterMesh.visible = visible
     }
   }
 
@@ -467,6 +524,14 @@ export class ChunkMesh {
         this.transparentMesh.material.dispose()
       }
       this.transparentMesh = null
+    }
+    if (this.waterMesh) {
+      this.scene.remove(this.waterMesh)
+      this.waterMesh.geometry.dispose()
+      if (this.waterMesh.material instanceof THREE.Material) {
+        this.waterMesh.material.dispose()
+      }
+      this.waterMesh = null
     }
     this.chunk.mesh = null
   }
