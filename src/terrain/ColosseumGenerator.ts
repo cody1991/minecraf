@@ -150,6 +150,36 @@ export class ColosseumGenerator {
     this.archWidth = 0.7
   }
 
+  // ===== HELPER METHODS (Phase 2: Foundational) =====
+
+  /**
+   * Seeded random for deterministic generation based on position
+   * T004: Used for ruins debris and vegetation placement
+   */
+  private seededRandom(x: number, z: number): number {
+    const seed = (x * 73856093) ^ (z * 19349663)
+    const t = Math.sin(seed) * 43758.5453
+    return t - Math.floor(t)
+  }
+
+  /**
+   * Check if position is a pilaster (decorative column) position
+   * T005: Pilasters are at pillar positions on outer facade
+   */
+  private isPilasterPosition(angle: number, levelY: number): boolean {
+    const { isPillar } = this.getArchPosition(angle)
+    // Pilasters span the full height of each level except entablature
+    return isPillar && levelY > 0 && levelY < this.config.levelHeight - 1
+  }
+
+  /**
+   * Check if position is a cornice (horizontal band) position
+   * T006: Cornices are at top and bottom of each level
+   */
+  private isCornicePosition(levelY: number): boolean {
+    return levelY === 0 || levelY === this.config.levelHeight - 1
+  }
+
   /**
    * Check if world coordinates are within the Colosseum bounds
    */
@@ -162,6 +192,7 @@ export class ColosseumGenerator {
 
   /**
    * Check if position is in the ruined section
+   * T020: Enhanced with more irregular fracture edges using multi-octave noise
    */
   private isInRuins(angle: number, relY: number): boolean {
     if (!this.config.enableRuins) return false
@@ -201,8 +232,13 @@ export class ColosseumGenerator {
       }
     }
     
-    // Create jagged edge effect
-    const jaggedNoise = Math.sin(normAngle * 10) * 0.1 + Math.sin(normAngle * 23) * 0.05
+    // T020: Enhanced multi-octave noise for more irregular fracture edges
+    // Multiple frequencies create more natural-looking destruction patterns
+    const noise1 = Math.sin(normAngle * 10) * 0.12
+    const noise2 = Math.sin(normAngle * 23 + 1.5) * 0.08
+    const noise3 = Math.sin(normAngle * 47 + 3.2) * 0.04
+    const noise4 = Math.sin(relY * 0.5 + normAngle * 7) * 0.06  // Height-dependent variation
+    const jaggedNoise = noise1 + noise2 + noise3 + noise4
     const effectiveThreshold = threshold + jaggedNoise
     
     // Center of ruins zone is most destroyed
@@ -324,6 +360,7 @@ export class ColosseumGenerator {
 
   /**
    * Get the block type at a specific world position
+   * Enhanced with: US1 (外墙精美化), US2 (内部装饰), US3 (废墟沧桑感), US4 (材质层次)
    */
   getBlockAt(worldX: number, worldY: number, worldZ: number): BlockType | null {
     if (!this.isInColosseumBounds(worldX, worldZ)) {
@@ -339,18 +376,45 @@ export class ColosseumGenerator {
     
     const angle = Math.atan2(relZ, relX)
     
-    // Check if in ruined section
+    // ===== US3: RUINS ENHANCEMENT =====
+    // Check if in ruined section with enhanced irregular edges
     if (this.isInRuins(angle, relY)) {
+      // T021-T023: Add scattered rubble and vegetation in ruins zone
+      const random = this.seededRandom(worldX, worldZ)
+      
+      // Only add debris at ground level of ruins
+      if (relY === 0) {
+        if (random < 0.10) {
+          return BlockType.COBBLESTONE  // T021: Scattered rubble (10%)
+        }
+        if (random < 0.25) {
+          // T022: Vegetation (15% additional = 25% total threshold)
+          return random < 0.20 ? BlockType.TALL_GRASS : BlockType.LEAVES
+        }
+      }
       return null  // Let terrain show through
     }
     
-    // Above structure
+    // ===== US1: ENHANCED MERLONS/CRENELLATIONS =====
+    // Above structure - add decorative top
     if (relY >= this.totalHeight) {
-      // Add merlons/crenellations on top of pillars
+      // T011: Enhanced merlons with sawtooth pattern
       if (relY === this.totalHeight && this.isInOuterWall(relX, relZ)) {
+        const { isPillar, archIndex } = this.getArchPosition(angle)
+        // Create sawtooth pattern - merlons at pillar positions and every other arch
+        if (isPillar || archIndex % 2 === 0) {
+          return BlockType.STONE
+        }
+      }
+      // Extra height for corner merlons
+      if (relY === this.totalHeight + 1) {
         const { isPillar } = this.getArchPosition(angle)
         if (isPillar) {
-          return BlockType.STONE
+          // Check if at major pillar positions (every 4th)
+          const { archIndex } = this.getArchPosition(angle)
+          if (archIndex % 4 === 0) {
+            return BlockType.BRICK  // Decorative finials
+          }
         }
       }
       return null
@@ -359,7 +423,7 @@ export class ColosseumGenerator {
     const level = this.getLevel(relY)
     const levelY = this.getLevelY(relY)
     
-    // ===== OUTER WALL STRUCTURE =====
+    // ===== OUTER WALL STRUCTURE (US1: Enhanced) =====
     if (this.isInOuterWall(relX, relZ)) {
       // Calculate distance from outer edge
       const outerR = getEllipseRadius(angle, this.config.outerRadiusX, this.config.outerRadiusZ)
@@ -368,47 +432,78 @@ export class ColosseumGenerator {
       const depthFromOuter = outerR - currentR
       const wallDepth = outerR - innerR
       
-      const { isPillar } = this.getArchPosition(angle)
+      const { isPillar, posInUnit } = this.getArchPosition(angle)
       
-      // === Outer facade (first 2 blocks from outside) ===
+      // === T007-T013: Enhanced Outer facade ===
       if (depthFromOuter <= 2) {
         // Check for arch openings
         if (this.isInArchOpening(relX, relZ, relY, level)) {
+          // T012: Archivolt (arch keystone decoration) at arch top
+          if (levelY === this.config.levelHeight - 2) {
+            const centerDist = Math.abs(posInUnit - 0.5)
+            if (centerDist < 0.15) {
+              return BlockType.BRICK  // Keystone
+            }
+          }
           return BlockType.AIR
         }
         
-        // Pillars protrude slightly on the outermost layer
+        // T007-T009: Enhanced Pilasters (decorative columns)
         if (isPillar && depthFromOuter <= 1) {
-          // Column capital at top of each level (just below entablature)
+          // T008: Column capital (柱头) at top of each level
           if (levelY === this.config.levelHeight - 2) {
-            return BlockType.STONE  // Could use different block for capitals
+            return BlockType.BRICK  // Decorative capital
           }
-          return BlockType.STONE
+          // T009: Column base (柱础) at bottom of each level
+          if (levelY === 1) {
+            return BlockType.BRICK  // Decorative base
+          }
+          // T007/T025: Pilaster body uses COBBLESTONE for texture contrast
+          return BlockType.COBBLESTONE
         }
         
-        // Entablature (horizontal cornice between levels)
-        if (levelY === 0 || levelY === this.config.levelHeight - 1) {
-          return BlockType.STONE
+        // T013: Half-column decoration at arch sides
+        if (!isPillar && depthFromOuter <= 1) {
+          const edgeDist = Math.min(posInUnit, 1 - posInUnit)
+          if (edgeDist < 0.15 && levelY > 0 && levelY < this.config.levelHeight - 1) {
+            return BlockType.COBBLESTONE  // Half-column at arch edges
+          }
         }
         
-        return BlockType.STONE
+        // T010/T026: Cornice (檐口) protrusion with BRICK
+        if (this.isCornicePosition(levelY)) {
+          return BlockType.BRICK  // Decorative horizontal band
+        }
+        
+        return BlockType.STONE  // Main wall surface
       }
       
-      // === Inner corridor/gallery space ===
+      // === T016/T027: Inner corridor/gallery space with arched ceiling ===
       if (depthFromOuter > 2 && depthFromOuter < wallDepth - 1) {
-        // Floor of each level
+        // T027: Corridor floor uses STONE (distinct from arena SAND)
         if (levelY === 0) {
           return BlockType.STONE
         }
-        // Ceiling
-        if (levelY === this.config.levelHeight - 1) {
-          return BlockType.STONE
+        
+        // T016: Arched ceiling calculation
+        const corridorCenter = (2 + wallDepth - 1) / 2
+        const distFromCenter = Math.abs(depthFromOuter - corridorCenter)
+        const maxDist = (wallDepth - 3) / 2
+        const normalizedDist = distFromCenter / maxDist
+        
+        // Calculate arch curve - higher in center, lower at edges
+        const archCurve = Math.sqrt(Math.max(0, 1 - normalizedDist * normalizedDist))
+        const archCeilingStart = this.config.levelHeight - 1 - Math.floor(archCurve * 2)
+        
+        if (levelY >= archCeilingStart) {
+          return BlockType.STONE  // Arched ceiling
         }
+        
         // Support columns inside corridor (every 4th arch position)
         const archPos = this.getArchPosition(angle)
         if (archPos.archIndex % 4 === 0 && archPos.isPillar) {
           if (depthFromOuter > 3 && depthFromOuter < wallDepth - 2) {
-            return BlockType.STONE
+            return BlockType.COBBLESTONE  // Interior support columns
           }
         }
         // Open corridor space
@@ -434,10 +529,27 @@ export class ColosseumGenerator {
       return BlockType.STONE
     }
     
-    // ===== ARENA FLOOR =====
+    // ===== US2: ARENA FLOOR WITH PATTERNS (T017-T018) =====
     if (this.isInArena(relX, relZ)) {
       if (relY === 0) {
-        return BlockType.SAND
+        const dist = Math.sqrt(relX * relX + relZ * relZ)
+        
+        // T017: Center circular marking (距离 3-5 方块)
+        if (dist >= 3 && dist <= 5) {
+          return BlockType.DIRT  // Dark ring at center
+        }
+        
+        // T018: Radial division lines (每 45° 一条)
+        const arenaAngle = Math.atan2(relZ, relX)
+        const normalizedAngle = ((arenaAngle % (Math.PI / 4)) + Math.PI / 4) % (Math.PI / 4)
+        // Lines are thin - only at angle boundaries
+        if (normalizedAngle < 0.08 || normalizedAngle > Math.PI / 4 - 0.08) {
+          if (dist > 5) {  // Don't overlap with center ring
+            return BlockType.DIRT  // Radial lines
+          }
+        }
+        
+        return BlockType.SAND  // Main arena floor
       }
       // Hypogeum hint - some structure below arena level visible
       if (relY === -1) {
@@ -451,7 +563,7 @@ export class ColosseumGenerator {
       return BlockType.AIR
     }
     
-    // ===== SEATING TIERS (CAVEA) =====
+    // ===== US2: SEATING TIERS WITH MATERIAL VARIATION (T015) =====
     const tierIndex = this.getTierIndex(relX, relZ)
     if (tierIndex >= 0) {
       // Each tier rises as you go outward
@@ -459,12 +571,16 @@ export class ColosseumGenerator {
       const tierBaseHeight = tierIndex * 2  // Each tier is 2 blocks higher
       const tierTopHeight = tierBaseHeight + 1
       
+      // T015: Material selection based on tier index (每3排区分)
+      const tierMaterials = [BlockType.STONE, BlockType.COBBLESTONE, BlockType.BRICK]
+      const tierMaterial = tierMaterials[tierIndex % 3]
+      
       if (relY < tierBaseHeight) {
         // Solid foundation under tier
-        return BlockType.STONE
+        return BlockType.STONE  // Foundation always stone
       } else if (relY === tierBaseHeight) {
-        // Walking/standing level
-        return BlockType.STONE
+        // Walking/standing level - use varied material
+        return tierMaterial
       } else if (relY === tierTopHeight) {
         // Seat back (creates step effect)
         // Only on the outer edge of each tier
@@ -477,7 +593,7 @@ export class ColosseumGenerator {
         const innerB = outerB - 1
         
         if (isInEllipseRing(relX, relZ, innerA, innerB, outerA, outerB)) {
-          return BlockType.STONE
+          return tierMaterial  // Seat back with same material as tier
         }
         return BlockType.AIR
       }
