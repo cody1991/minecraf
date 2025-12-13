@@ -126,7 +126,13 @@ export abstract class Animal extends Entity implements IPhysicsBody {
     this.updateSound(deltaTime, playerPosition)
 
     // Sync mesh position and rotation
-    this.mesh.position.copy(this.position)
+    // The mesh is built with feet at y=0, but physics uses center position
+    // So we offset the mesh down by half height to align feet with ground
+    this.mesh.position.set(
+      this.position.x,
+      this.position.y - this.height / 2,
+      this.position.z
+    )
     this.mesh.rotation.y = this.rotation
   }
   

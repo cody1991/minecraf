@@ -1,15 +1,15 @@
 /**
  * SpawnProtection - Spawn point protection constants and utilities
  * Feature: 009-ecosystem-flora-fauna
+ * Feature: 016-fix-animal-spawning - Reduced protection radius
  */
-
-import { COLOSSEUM_FLAT_RADIUS } from '../core/ChunkConstants'
 
 /**
  * Radius around spawn point where animals should not spawn (in blocks)
- * Uses the colosseum flat radius as the base protection zone
+ * Reduced to allow animals closer to spawn for easier testing
+ * Feature: 016-fix-animal-spawning
  */
-export const SPAWN_PROTECTION_RADIUS = Math.max(COLOSSEUM_FLAT_RADIUS, 50)
+export const SPAWN_PROTECTION_RADIUS = 30
 
 /**
  * Radius for reduced plant density near spawn (in blocks)

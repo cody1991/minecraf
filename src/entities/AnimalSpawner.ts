@@ -1,6 +1,7 @@
 /**
  * AnimalSpawner - Handles spawning animals in chunks
  * Feature: 008-biome-weather-system
+ * Feature: 016-fix-animal-spawning - Fixed animal spawning on ground
  */
 
 import * as THREE from 'three'
@@ -17,6 +18,26 @@ import { Fox } from './Fox'
 import { BiomeType } from '../terrain/BiomeTypes'
 import { World } from '../core/World'
 import { isInSpawnProtectionZone } from '../terrain/SpawnProtection'
+import { BlockType, isSolid, isTreeLog, isTreeLeaves } from '../core/Block'
+
+/**
+ * Maximum depth to scan downward when finding ground
+ * Feature: 016-fix-animal-spawning
+ */
+const MAX_SCAN_DEPTH = 10
+
+/**
+ * Extra height above terrain to start scanning (to account for trees)
+ * Feature: 016-fix-animal-spawning
+ */
+const SCAN_START_OFFSET = 15
+
+/**
+ * Maximum allowed deviation from theoretical terrain height
+ * Prevents spawning in caves or on floating structures
+ * Feature: 016-fix-animal-spawning
+ */
+const MAX_HEIGHT_DEVIATION = 5
 
 /**
  * Configuration for animal spawning
@@ -96,7 +117,17 @@ export class AnimalSpawner {
       return
     }
     
-    // Mark chunk as processed
+    // Check if ground-level chunks are loaded before attempting spawn
+    // Feature: 016-fix-animal-spawning
+    // We need chunks at y=0,1,2 to be loaded for proper ground detection
+    for (let cy = 0; cy <= 2; cy++) {
+      if (!this.world.isChunkLoaded(chunkX, cy, chunkZ)) {
+        // Not all chunks loaded yet, try again later
+        return
+      }
+    }
+    
+    // Mark chunk as processed (all required chunks are now loaded)
     this.spawnedChunks.add(chunkKey)
     
     // Random chance to spawn
@@ -159,6 +190,7 @@ export class AnimalSpawner {
 
   /**
    * Find a valid spawn position in chunk
+   * Feature: 016-fix-animal-spawning - Scan downward to find actual ground
    */
   private findSpawnPosition(chunkX: number, chunkZ: number): THREE.Vector3 | null {
     // Try a few random positions
@@ -172,14 +204,56 @@ export class AnimalSpawner {
       // Skip spawn protection zone
       if (isInSpawnProtectionZone(worldX, worldZ)) continue
       
-      // Use terrain generator height directly (doesn't require chunk to be loaded)
-      const surfaceY = this.world.getHeightAt(worldX, worldZ)
+      // Get theoretical terrain height as reference
+      const terrainY = this.world.getHeightAt(worldX, worldZ)
       
-      if (surfaceY >= this.config.minY) {
-        // Return ground level + 1 (top of ground block)
-        // Animal Y position will be adjusted in createAnimal based on animal height
-        return new THREE.Vector3(worldX + 0.5, surfaceY + 1, worldZ + 0.5)
+      if (terrainY < this.config.minY) continue
+      
+      // Start scanning from above terrain (to account for trees and structures)
+      // Feature: 016-fix-animal-spawning
+      const scanStartY = Math.min(terrainY + SCAN_START_OFFSET, 127)
+      const scanEndY = Math.max(terrainY - MAX_SCAN_DEPTH, 0)
+      
+      // Scan downward to find actual solid ground
+      let groundY = -1
+      let foundValidGround = false
+      
+      for (let y = scanStartY; y >= scanEndY; y--) {
+        const block = this.world.getBlock(worldX, y, worldZ)
+        
+        // US2: If we hit water, this position is invalid for land animals
+        if (block === BlockType.WATER) {
+          break
+        }
+        
+        // US1: Check if this is valid ground (solid, not tree)
+        if (isSolid(block) && !isTreeLog(block) && !isTreeLeaves(block)) {
+          groundY = y
+          foundValidGround = true
+          break
+        }
       }
+      
+      // No valid ground found
+      if (!foundValidGround) continue
+      
+      // Feature: 016-fix-animal-spawning
+      // Reject if ground is too far from theoretical terrain (likely a cave or floating structure)
+      if (Math.abs(groundY - terrainY) > MAX_HEIGHT_DEVIATION) continue
+      
+      // US3: Check space above ground (feet and head positions)
+      const feetBlock = this.world.getBlock(worldX, groundY + 1, worldZ)
+      const headBlock = this.world.getBlock(worldX, groundY + 2, worldZ)
+      
+      // Feet position must be passable (not solid, not water)
+      if (isSolid(feetBlock) || feetBlock === BlockType.WATER) continue
+      
+      // Head position must be passable (not solid, not water)
+      if (isSolid(headBlock) || headBlock === BlockType.WATER) continue
+      
+      // Return ground level + 1 (top of ground block)
+      // Animal Y position will be adjusted in createAnimal based on animal height
+      return new THREE.Vector3(worldX + 0.5, groundY + 1, worldZ + 0.5)
     }
     
     return null
@@ -221,9 +295,10 @@ export class AnimalSpawner {
         return null
     }
     
-    // Adjust Y position based on animal height
-    // Animal position is at center, so feet are at position.y - height/2
-    // We want feet at groundY, so position.y = groundY + height/2
+    // Physics system uses center position, so adjust Y
+    // groundY is the top of ground block, feet should be at groundY
+    // Physics expects: position.y - height/2 = feet position
+    // So: position.y = groundY + height/2
     if (animal) {
       animal.position.y = groundY + animal.height / 2
     }
