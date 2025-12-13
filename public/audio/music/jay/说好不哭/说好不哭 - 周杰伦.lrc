@@ -1,0 +1,7 @@
+<br />
+<b>Fatal error</b>:  Uncaught Exception in /www/wwwroot/music.ghpym.com/lib/AipHttpClient.php:161
+Stack trace:
+#0 /www/wwwroot/music.ghpym.com/api/ajax.php(266): AipHttpClient-&gt;get(NULL)
+#1 /www/wwwroot/music.ghpym.com/api/ajax.php(10): fun_get_music_lrc()
+#2 {main}
+  thrown in <b>/www/wwwroot/music.ghpym.com/lib/AipHttpClient.php</b> on line <b>161</b><br />
