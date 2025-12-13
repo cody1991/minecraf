@@ -76,15 +76,25 @@ export const SKY_COLORS = {
     ambient: 1.0
   },
   [TimePeriod.SUNSET]: {
-    top: 0x2c3e50,    // Dark blue-gray
-    horizon: 0xe74c3c, // Red-orange
+    top: 0x1a1a3a,    // Deep purple-blue (was 0x2c3e50)
+    horizon: 0xd4622b, // Soft orange-red (was 0xe74c3c blood red)
     ambient: 0.5
   },
   [TimePeriod.NIGHT]: {
-    top: 0x0a0a20,    // Very dark blue
-    horizon: 0x1a1a40, // Dark purple-blue
+    top: 0x0a0a1a,    // Deep night blue (was 0x0a0a20)
+    horizon: 0x0f1a2a, // Teal/dark blue (was 0x1a1a40 purple)
     ambient: 0.2
   }
+}
+
+/**
+ * Sun colors for different time periods
+ */
+export const SUN_COLORS = {
+  [TimePeriod.SUNRISE]: { core: 0xff8c00, glow: 0xff6347 },  // Deep orange / Tomato
+  [TimePeriod.DAY]: { core: 0xfffaf0, glow: 0xfff8dc },      // Floral white / Cornsilk
+  [TimePeriod.SUNSET]: { core: 0xff6b35, glow: 0xff4500 },   // Orange-red / OrangeRed
+  [TimePeriod.NIGHT]: { core: 0xeeeeee, glow: 0xcccccc }     // Light gray (moon-like)
 }
 
 /**

@@ -39,11 +39,15 @@ export class MiniMap {
       width: ${MINIMAP_SIZE}px;
       height: ${MINIMAP_SIZE}px;
       border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(180, 160, 120, 0.9);
+      box-shadow: 
+        inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+        0 0 0 2px rgba(60, 50, 40, 0.7),
+        0 3px 15px rgba(0, 0, 0, 0.5);
       overflow: hidden;
       z-index: 100;
       pointer-events: none;
+      background: rgba(20, 20, 30, 0.3);
     `
 
     // Create main canvas
@@ -195,6 +199,9 @@ export class MiniMap {
     // Draw cached terrain
     ctx.drawImage(this.cacheCanvas, 0, 0)
 
+    // Draw compass directions
+    this.drawCompass(ctx, center, radius, playerRotation)
+
     // Draw player marker (center)
     ctx.fillStyle = PLAYER_COLOR
     ctx.beginPath()
@@ -232,12 +239,45 @@ export class MiniMap {
 
     ctx.restore()
 
-    // Draw border
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+    // Draw decorative border ring
+    ctx.strokeStyle = 'rgba(180, 160, 120, 0.6)'
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.arc(center, center, radius - 1, 0, Math.PI * 2)
+    ctx.arc(center, center, radius - 2, 0, Math.PI * 2)
     ctx.stroke()
+  }
+
+  /**
+   * Draw compass direction labels (N, E, S, W)
+   */
+  private drawCompass(ctx: CanvasRenderingContext2D, center: number, radius: number, playerRotation: number): void {
+    const directions = [
+      { label: 'N', angle: 0, color: '#ff4444' },           // North - red
+      { label: 'E', angle: Math.PI / 2, color: '#ffffff' }, // East - white
+      { label: 'S', angle: Math.PI, color: '#ffffff' },     // South - white
+      { label: 'W', angle: -Math.PI / 2, color: '#ffffff' } // West - white
+    ]
+
+    const labelRadius = radius - 12
+    ctx.font = 'bold 10px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+
+    for (const dir of directions) {
+      // Calculate position based on player rotation
+      // When player faces north (rotation=0), N should be at top
+      const adjustedAngle = dir.angle - playerRotation
+      const x = center + Math.sin(adjustedAngle) * labelRadius
+      const y = center - Math.cos(adjustedAngle) * labelRadius
+
+      // Draw text shadow for better visibility
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+      ctx.fillText(dir.label, x + 1, y + 1)
+      
+      // Draw text
+      ctx.fillStyle = dir.color
+      ctx.fillText(dir.label, x, y)
+    }
   }
 
   /**

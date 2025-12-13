@@ -5,7 +5,7 @@
 
 import * as THREE from 'three'
 import { TimeSystem } from './TimeSystem'
-import { TimePeriod, SKY_COLORS } from './WeatherTypes'
+import { TimePeriod, SKY_COLORS, SUN_COLORS } from './WeatherTypes'
 
 // Inline shaders to avoid import issues
 const SKY_VERTEX_SHADER = `
@@ -51,6 +51,47 @@ void main() {
 }
 `
 
+// Sun shader for glow effect
+const SUN_VERTEX_SHADER = `
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`
+
+const SUN_FRAGMENT_SHADER = `
+uniform vec3 uCoreColor;
+uniform vec3 uGlowColor;
+uniform float uGlowIntensity;
+
+varying vec2 vUv;
+
+void main() {
+  // Distance from center (0 at center, 1 at edge)
+  float dist = length(vUv - 0.5) * 2.0;
+  
+  // Core: bright center with soft falloff
+  float core = 1.0 - smoothstep(0.0, 0.4, dist);
+  
+  // Glow: extends beyond core with gradual falloff
+  float glow = 1.0 - smoothstep(0.2, 1.0, dist);
+  glow = pow(glow, 1.5) * uGlowIntensity;
+  
+  // Combine colors
+  vec3 color = mix(uGlowColor, uCoreColor, core);
+  
+  // Alpha: solid core, fading glow
+  float alpha = max(core, glow * 0.8);
+  
+  // Discard fully transparent pixels
+  if (alpha < 0.01) discard;
+  
+  gl_FragColor = vec4(color, alpha);
+}
+`
+
 /**
  * Renders the sky dome, sun, moon, and stars
  */
@@ -59,6 +100,7 @@ export class SkyRenderer {
   private skyDome: THREE.Mesh
   private skyMaterial: THREE.ShaderMaterial
   private sun: THREE.Mesh
+  private sunMaterial!: THREE.ShaderMaterial
   private moon: THREE.Mesh
   private stars: THREE.Points
   private celestialGroup: THREE.Group
@@ -128,15 +170,25 @@ export class SkyRenderer {
   }
 
   /**
-   * Create sun mesh
+   * Create sun mesh with glow shader
    */
   private createSun(): THREE.Mesh {
-    const geometry = new THREE.SphereGeometry(20, 16, 16)
-    const material = new THREE.MeshBasicMaterial({
-      color: 0xffff00,
-      fog: false
+    // Use PlaneGeometry for billboard effect
+    const geometry = new THREE.PlaneGeometry(60, 60)
+    this.sunMaterial = new THREE.ShaderMaterial({
+      vertexShader: SUN_VERTEX_SHADER,
+      fragmentShader: SUN_FRAGMENT_SHADER,
+      uniforms: {
+        uCoreColor: { value: new THREE.Color(0xfffaf0) },
+        uGlowColor: { value: new THREE.Color(0xfff8dc) },
+        uGlowIntensity: { value: 1.0 }
+      },
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
     })
-    const sun = new THREE.Mesh(geometry, material)
+    const sun = new THREE.Mesh(geometry, this.sunMaterial)
     sun.position.set(0, 0, -this.celestialDistance)
     return sun
   }
@@ -208,6 +260,12 @@ export class SkyRenderer {
     // Rotate celestial group (sun/moon orbit)
     this.celestialGroup.rotation.x = sunAngle
 
+    // Make sun face camera (billboard effect)
+    this.sun.lookAt(cameraPosition)
+
+    // Update sun colors based on time period
+    this.updateSunColors(timePeriod, timeSystem.getTicks())
+
     // Update sky colors based on time period
     this.updateSkyColors(timePeriod, timeSystem.getTicks())
 
@@ -228,6 +286,45 @@ export class SkyRenderer {
 
     // Update rain uniform
     (this.skyMaterial.uniforms.uIsRaining as { value: number }).value = this.isRaining ? 1.0 : 0.0;
+  }
+
+  /**
+   * Update sun colors based on time period
+   */
+  private updateSunColors(period: TimePeriod, ticks: number): void {
+    const colors = SUN_COLORS[period]
+    let nextColors = colors
+    let blendFactor = 0
+
+    const normalizedTicks = ticks % 24000
+
+    // Calculate blend between periods
+    if (period === TimePeriod.SUNRISE) {
+      blendFactor = normalizedTicks / 2000
+      nextColors = SUN_COLORS[TimePeriod.DAY]
+    } else if (period === TimePeriod.SUNSET) {
+      blendFactor = (normalizedTicks - 10000) / 2000
+      nextColors = SUN_COLORS[TimePeriod.NIGHT]
+    } else if (period === TimePeriod.NIGHT && normalizedTicks > 22000) {
+      blendFactor = (normalizedTicks - 22000) / 2000
+      nextColors = SUN_COLORS[TimePeriod.SUNRISE]
+    }
+
+    // Interpolate colors
+    const coreColor = new THREE.Color(colors.core)
+    const glowColor = new THREE.Color(colors.glow)
+
+    if (blendFactor > 0) {
+      coreColor.lerp(new THREE.Color(nextColors.core), blendFactor)
+      glowColor.lerp(new THREE.Color(nextColors.glow), blendFactor)
+    }
+
+    (this.sunMaterial.uniforms.uCoreColor as { value: THREE.Color }).value.copy(coreColor);
+    (this.sunMaterial.uniforms.uGlowColor as { value: THREE.Color }).value.copy(glowColor)
+
+    // Adjust glow intensity based on time (dimmer at night)
+    const glowIntensity = period === TimePeriod.NIGHT ? 0.3 : 1.0;
+    (this.sunMaterial.uniforms.uGlowIntensity as { value: number }).value = glowIntensity
   }
 
   /**
@@ -287,8 +384,8 @@ export class SkyRenderer {
   dispose(): void {
     this.skyDome.geometry.dispose()
     this.skyMaterial.dispose()
-    this.sun.geometry.dispose();
-    (this.sun.material as THREE.Material).dispose()
+    this.sun.geometry.dispose()
+    this.sunMaterial.dispose()
     this.moon.geometry.dispose();
     (this.moon.material as THREE.Material).dispose()
     this.stars.geometry.dispose();
