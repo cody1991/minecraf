@@ -1,10 +1,66 @@
 /**
  * Synthesized audio generator for placeholder sounds
  * Feature: 012-sound-map-system
+ * Updated: 017-block-sound-effects - Added block sound generation
  * 
  * Generates simple synthesized sounds when audio files are not available.
  * This provides a fallback so the game still has audio feedback.
  */
+
+import { BlockSoundCategory, BlockSoundAction, BLOCK_SOUND_PARAMS } from './AudioTypes'
+
+/**
+ * Generate block interaction sound (place or break)
+ * Feature: 017-block-sound-effects
+ * 
+ * @param audioContext The Web Audio API context
+ * @param category The block sound category
+ * @param action The action (place or break)
+ * @returns AudioBuffer with the generated sound
+ */
+export function generateBlockSound(
+  audioContext: AudioContext,
+  category: BlockSoundCategory,
+  action: BlockSoundAction
+): AudioBuffer {
+  const params = BLOCK_SOUND_PARAMS[category]
+  const sampleRate = audioContext.sampleRate
+  const duration = params.duration
+  const length = Math.floor(sampleRate * duration)
+  const buffer = audioContext.createBuffer(1, length, sampleRate)
+  const data = buffer.getChannelData(0)
+
+  // Place sounds are higher pitched than break sounds
+  const pitchMultiplier = action === 'place' ? 1.2 : 1.0
+  const baseFreq = params.baseFrequency * pitchMultiplier
+
+  for (let i = 0; i < length; i++) {
+    const t = i / sampleRate
+    let sample = 0
+
+    // Tonal component
+    const freq = baseFreq + (Math.random() - 0.5) * params.frequencyRange * 0.1
+    sample += Math.sin(2 * Math.PI * freq * t) * (1 - params.noiseMix)
+
+    // Add harmonics for richness
+    sample += Math.sin(2 * Math.PI * freq * 2 * t) * 0.3 * (1 - params.noiseMix)
+    sample += Math.sin(2 * Math.PI * freq * 0.5 * t) * 0.2 * (1 - params.noiseMix)
+
+    // Noise component
+    sample += (Math.random() * 2 - 1) * params.noiseMix
+
+    // Apply exponential decay envelope
+    const envelope = Math.exp(-t * params.decayRate)
+
+    // Apply attack for smoother start
+    const attack = 0.005
+    const attackEnv = t < attack ? t / attack : 1
+
+    data[i] = sample * envelope * attackEnv * 0.5
+  }
+
+  return buffer
+}
 
 /**
  * Generate a simple tone as an AudioBuffer

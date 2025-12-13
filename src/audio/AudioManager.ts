@@ -1,17 +1,20 @@
 /**
  * AudioManager - Core audio system manager (Singleton)
  * Feature: 012-sound-map-system
+ * Updated: 017-block-sound-effects
  */
 
-import { AudioSettings, SfxOptions, Sfx3dOptions, AUDIO_ASSETS, FootstepCategory, AnimalSoundType } from './AudioTypes'
+import { AudioSettings, SfxOptions, Sfx3dOptions, AUDIO_ASSETS, FootstepCategory, AnimalSoundType, BlockSoundAction, getBlockSoundCategory } from './AudioTypes'
 import { loadAudioSettings, saveAudioSettings } from './AudioSettings'
 import { SoundInstance } from './SoundInstance'
 import { BlockType } from '../core/Block'
+import { BlockSoundThrottle } from './BlockSoundThrottle'
 import { 
   generateAmbientMusic, 
   generateFootstep, 
   generateFallSound, 
-  generateAnimalSound 
+  generateAnimalSound,
+  generateBlockSound
 } from './SynthAudio'
 
 /** Fade duration for music transitions (seconds) */
@@ -36,6 +39,11 @@ export class AudioManager {
 
   private isInitialized: boolean = false
   private initPromise: Promise<void> | null = null
+
+  // Block sound throttle manager (Feature: 017-block-sound-effects)
+  private blockSoundThrottle: BlockSoundThrottle = new BlockSoundThrottle()
+  // Cache for generated block sound buffers
+  private blockSoundCache: Map<string, AudioBuffer> = new Map()
 
   private constructor() {
     this.settings = loadAudioSettings()
@@ -411,6 +419,87 @@ export class AudioManager {
   }
 
   /**
+   * Play block interaction sound (place or break)
+   * Feature: 017-block-sound-effects
+   * 
+   * @param blockType The type of block being interacted with
+   * @param action The action being performed (place or break)
+   * @param x Optional X position for 3D audio
+   * @param y Optional Y position for 3D audio
+   * @param z Optional Z position for 3D audio
+   */
+  playBlockSound(
+    blockType: BlockType,
+    action: BlockSoundAction,
+    x?: number,
+    y?: number,
+    z?: number
+  ): void {
+    // Don't play sounds if not initialized or muted
+    if (!this.audioContext || !this.sfxGain) return
+    if (this.settings.muted) return
+
+    // Don't play sound for AIR blocks
+    if (blockType === BlockType.AIR) return
+
+    // Get the sound category for this block type
+    const category = getBlockSoundCategory(blockType)
+
+    // Check throttle - don't play if too soon after last sound of same category
+    if (!this.blockSoundThrottle.tryPlay(category)) return
+
+    // Get or generate the sound buffer
+    const cacheKey = `block_${category}_${action}`
+    let buffer = this.blockSoundCache.get(cacheKey)
+    
+    if (!buffer) {
+      buffer = generateBlockSound(this.audioContext, category, action)
+      this.blockSoundCache.set(cacheKey, buffer)
+    }
+
+    // Create audio nodes
+    const source = this.audioContext.createBufferSource()
+    source.buffer = buffer
+
+    // Add slight random pitch variation for variety
+    source.playbackRate.value = 0.9 + Math.random() * 0.2
+
+    const gainNode = this.audioContext.createGain()
+    gainNode.gain.value = 1.0
+
+    // Use 3D positioning if coordinates provided
+    if (x !== undefined && y !== undefined && z !== undefined) {
+      const panner = this.audioContext.createPanner()
+      panner.distanceModel = 'inverse'
+      panner.refDistance = 1
+      panner.maxDistance = 50
+      panner.rolloffFactor = 1
+      panner.positionX.value = x
+      panner.positionY.value = y
+      panner.positionZ.value = z
+
+      source.connect(panner)
+      panner.connect(gainNode)
+    } else {
+      source.connect(gainNode)
+    }
+
+    gainNode.connect(this.sfxGain)
+    source.start()
+
+    // Track active sound
+    const instance = new SoundInstance(source, gainNode)
+    const id = `block_${this.soundIdCounter++}`
+    this.activeSounds.set(id, instance)
+
+    source.onended = () => {
+      this.activeSounds.delete(id)
+    }
+
+    console.log(`[AudioManager] Playing block sound: ${category} ${action}`)
+  }
+
+  /**
    * Update listener position for 3D audio
    */
   updateListenerPosition(x: number, y: number, z: number, forwardX: number, forwardZ: number): void {
@@ -539,8 +628,10 @@ export class AudioManager {
       this.audioContext = null
     }
 
-    // Clear cache
+    // Clear caches
     this.bufferCache.clear()
+    this.blockSoundCache.clear()
+    this.blockSoundThrottle.reset()
 
     this.isInitialized = false
     this.initPromise = null

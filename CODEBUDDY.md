@@ -24,6 +24,7 @@ Auto-generated from all feature plans. Last updated: 2025-12-13
 - TypeScript + HTML/CSS (Vite 项目) + 无新增依赖（仅修改 HTML 内容） (001-update-controls-panel)
 - TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3 (016-fix-animal-spawning)
 - TypeScript 5.x + Three.js (WebGL 2.0), Vite (016-fix-animal-spawning)
+- TypeScript 5.x + Three.js, Web Audio API, Vite (017-block-sound-effects)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -43,9 +44,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 017-block-sound-effects: Added TypeScript 5.x + Three.js, Web Audio API, Vite
 - 016-fix-animal-spawning: Added TypeScript 5.x + Three.js (WebGL 2.0), Vite
 - 016-fix-animal-spawning: Added TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3
-- 001-update-controls-panel: Added TypeScript + HTML/CSS (Vite 项目) + 无新增依赖（仅修改 HTML 内容）
 
 
 <!-- MANUAL ADDITIONS START -->
