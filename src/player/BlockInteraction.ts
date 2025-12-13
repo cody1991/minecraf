@@ -6,20 +6,19 @@ import { Raycaster, INTERACTION_DISTANCE } from '../utils/Raycaster'
 
 /**
  * BlockInteraction - handles block placement and destruction
+ * Always uses player's eye position and look direction for consistent behavior
  */
 export class BlockInteraction {
   private world: World
   private player: Player
   private raycaster: Raycaster
-  private camera: THREE.Camera
 
   // Callback when world changes
   private onWorldChange: (() => void) | null = null
 
-  constructor(world: World, player: Player, camera: THREE.Camera) {
+  constructor(world: World, player: Player, _camera: THREE.Camera) {
     this.world = world
     this.player = player
-    this.camera = camera
     this.raycaster = new Raycaster(world)
   }
 
@@ -95,12 +94,13 @@ export class BlockInteraction {
 
   /**
    * Get the block the player is looking at
+   * Uses player's eye position and look direction for consistent behavior
+   * in both first and third person views
    */
   private getTargetBlock() {
-    // Get camera position and direction
-    const origin = this.camera.position.clone()
-    const direction = new THREE.Vector3(0, 0, -1)
-    direction.applyQuaternion(this.camera.quaternion)
+    // Always use player's eye position and look direction
+    const origin = this.player.getEyePosition()
+    const direction = this.player.getLookDirection()
 
     return this.raycaster.cast(origin, direction)
   }

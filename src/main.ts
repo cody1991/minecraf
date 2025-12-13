@@ -5,6 +5,7 @@ import { CameraController } from './renderer/CameraController'
 import { InputManager } from './input/InputManager'
 import { Crosshair } from './ui/Crosshair'
 import { BlockSelector } from './ui/BlockSelector'
+import { TargetIndicator } from './ui/TargetIndicator'
 import { BlockInteraction } from './player/BlockInteraction'
 import { AudioManager } from './audio/AudioManager'
 import { VolumeControl } from './ui/VolumeControl'
@@ -99,6 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create UI components
   const crosshair = new Crosshair()
   const blockSelector = new BlockSelector()
+  
+  // Create 3D target indicator for third-person view
+  const targetIndicator = new TargetIndicator(
+    game.getRenderer().getScene(),
+    player,
+    game.getWorld()
+  )
   
   // Create audio manager
   const audioManager = AudioManager.getInstance()
@@ -207,6 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Handle view toggle (V key)
       if (input.viewToggle) {
         cameraController.toggleViewMode()
+        const isFirstPerson = cameraController.currentMode === ViewMode.FIRST_PERSON
+        // First person: show 2D crosshair, hide 3D indicator
+        // Third person: hide 2D crosshair, show 3D indicator
+        crosshair.setVisible(isFirstPerson)
+        targetIndicator.setVisible(!isFirstPerson)
       }
 
       // Handle character select (C key)
@@ -282,6 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update camera to follow player
     cameraController.update(deltaTime)
+
+    // Update 3D target indicator (for third-person view)
+    targetIndicator.update()
 
     // Update player position for chunk loading
     game.setPlayerPosition(player.position.x, player.position.y, player.position.z)

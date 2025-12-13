@@ -69,11 +69,20 @@ export class Player {
   }
 
   /**
-   * Get the forward direction vector
+   * Get the forward direction vector (horizontal only, for movement)
    */
   getForwardDirection(): THREE.Vector3 {
     const direction = new THREE.Vector3(0, 0, -1)
     direction.applyEuler(new THREE.Euler(0, this.rotation.y, 0))
+    return direction
+  }
+
+  /**
+   * Get the look direction vector (includes pitch, for raycasting/interaction)
+   */
+  getLookDirection(): THREE.Vector3 {
+    const direction = new THREE.Vector3(0, 0, -1)
+    direction.applyEuler(this.rotation)
     return direction
   }
 
