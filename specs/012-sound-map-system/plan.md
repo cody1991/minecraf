@@ -110,4 +110,4 @@ public/
 | data-model.md | ✅ 完成 | 音频和地图系统实体定义 |
 | quickstart.md | ✅ 完成 | 快速开始指南 |
 | contracts/ | ✅ 完成 | N/A - 无外部 API |
-| tasks.md | ⏳ 待生成 | 运行 `/speckit.tasks` |
+| tasks.md | ✅ 完成 | 52 个任务，7 个用户故事 |
