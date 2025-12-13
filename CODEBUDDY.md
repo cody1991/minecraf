@@ -18,6 +18,8 @@ Auto-generated from all feature plans. Last updated: 2025-12-12
 - N/A（内存状态，无持久化） (008-biome-weather-system)
 - TypeScript 5.x + Three.js (WebGL 渲染), Vite (构建工具) (010-colosseum-enhancement)
 - N/A (程序化生成，无持久化) (010-colosseum-enhancement)
+- TypeScript 5.6 + ES2020 + Three.js 0.170.0, Vite 6.0, Web Audio API (原生) (012-sound-map-system)
+- LocalStorage (音量设置持久化) (012-sound-map-system)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -37,9 +39,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 012-sound-map-system: Added TypeScript 5.6 + ES2020 + Three.js 0.170.0, Vite 6.0, Web Audio API (原生)
 - 011-ancient-landmarks: Added TypeScript 5.6 + Three.js 0.170.0, Vite 6.0
 - 010-colosseum-enhancement: Added TypeScript 5.x + Three.js (WebGL 渲染), Vite (构建工具)
-- 009-ecosystem-flora-fauna: Added TypeScript 5.6 (ES2020 target) + Three.js 0.170.0, Vite 6.0
 
 
 <!-- MANUAL ADDITIONS START -->
