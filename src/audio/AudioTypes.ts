@@ -56,25 +56,25 @@ export interface AudioAsset {
  */
 export const AUDIO_ASSETS: AudioAsset[] = [
   // Background music
-  { name: 'ambient', path: '/audio/music/ambient.mp3', type: 'music', preload: true },
+  { name: 'ambient', path: 'audio/music/ambient.mp3', type: 'music', preload: true },
   
   // Footstep sounds
-  { name: 'footstep_grass', path: '/audio/footsteps/grass.mp3', type: 'sfx', preload: true },
-  { name: 'footstep_stone', path: '/audio/footsteps/stone.mp3', type: 'sfx', preload: true },
-  { name: 'footstep_sand', path: '/audio/footsteps/sand.mp3', type: 'sfx', preload: true },
-  { name: 'footstep_wood', path: '/audio/footsteps/wood.mp3', type: 'sfx', preload: true },
+  { name: 'footstep_grass', path: 'audio/footsteps/grass.mp3', type: 'sfx', preload: true },
+  { name: 'footstep_stone', path: 'audio/footsteps/stone.mp3', type: 'sfx', preload: true },
+  { name: 'footstep_sand', path: 'audio/footsteps/sand.mp3', type: 'sfx', preload: true },
+  { name: 'footstep_wood', path: 'audio/footsteps/wood.mp3', type: 'sfx', preload: true },
   
   // Fall sounds
-  { name: 'fall_light', path: '/audio/effects/fall_light.mp3', type: 'sfx', preload: true },
-  { name: 'fall_heavy', path: '/audio/effects/fall_heavy.mp3', type: 'sfx', preload: true },
+  { name: 'fall_light', path: 'audio/effects/fall_light.mp3', type: 'sfx', preload: true },
+  { name: 'fall_heavy', path: 'audio/effects/fall_heavy.mp3', type: 'sfx', preload: true },
   
   // Animal sounds (lazy loaded)
-  { name: 'cow', path: '/audio/animals/cow.mp3', type: 'sfx', preload: false },
-  { name: 'pig', path: '/audio/animals/pig.mp3', type: 'sfx', preload: false },
-  { name: 'sheep', path: '/audio/animals/sheep.mp3', type: 'sfx', preload: false },
-  { name: 'chicken', path: '/audio/animals/chicken.mp3', type: 'sfx', preload: false },
-  { name: 'wolf', path: '/audio/animals/wolf.mp3', type: 'sfx', preload: false },
-  { name: 'fox', path: '/audio/animals/fox.mp3', type: 'sfx', preload: false },
+  { name: 'cow', path: 'audio/animals/cow.mp3', type: 'sfx', preload: false },
+  { name: 'pig', path: 'audio/animals/pig.mp3', type: 'sfx', preload: false },
+  { name: 'sheep', path: 'audio/animals/sheep.mp3', type: 'sfx', preload: false },
+  { name: 'chicken', path: 'audio/animals/chicken.mp3', type: 'sfx', preload: false },
+  { name: 'wolf', path: 'audio/animals/wolf.mp3', type: 'sfx', preload: false },
+  { name: 'fox', path: 'audio/animals/fox.mp3', type: 'sfx', preload: false },
 ]
 
 /**

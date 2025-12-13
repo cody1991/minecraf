@@ -34,7 +34,7 @@ export interface TextureAtlasConfig {
  * Default atlas configuration
  */
 const DEFAULT_CONFIG: TextureAtlasConfig = {
-  imagePath: '/textures/blocks.png',
+  imagePath: 'textures/blocks.png',
   tileSize: 16,
   columns: 24,  // Expanded for landmark blocks
   rows: 3
