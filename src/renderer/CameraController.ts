@@ -234,15 +234,12 @@ export class CameraController {
     const playerPos = this.player.position.clone()
     playerPos.y += CAMERA_HEIGHT_OFFSET
     
-    // Calculate offset - camera should be BEHIND the player (opposite of facing direction)
-    // Player faces -Z in local space, rotation.y rotates around Y axis
-    // We want camera behind player, so we use the OPPOSITE direction
-    const behindAngle = this.orbitYaw + Math.PI // Add PI to get behind direction
-    
+    // Calculate offset based on orbit angles (use player's yaw for horizontal)
+    // Camera is positioned using spherical coordinates around the player
     const offset = new THREE.Vector3()
-    offset.x = Math.sin(behindAngle) * Math.cos(this.orbitPitch) * this._thirdPersonDistance
+    offset.x = Math.sin(this.orbitYaw) * Math.cos(this.orbitPitch) * this._thirdPersonDistance
     offset.y = Math.sin(this.orbitPitch) * this._thirdPersonDistance
-    offset.z = Math.cos(behindAngle) * Math.cos(this.orbitPitch) * this._thirdPersonDistance
+    offset.z = Math.cos(this.orbitYaw) * Math.cos(this.orbitPitch) * this._thirdPersonDistance
     
     const targetPos = playerPos.clone().add(offset)
     

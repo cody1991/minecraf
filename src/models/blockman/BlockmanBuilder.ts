@@ -103,6 +103,7 @@ export class BlockmanBuilder {
     rightLeg.position.set(legX, legY, 0)
     
     // Add eyes if color specified
+    // Eyes face -Z direction (same as player forward direction)
     if (colors.eyes !== undefined) {
       const eyeSize = dim.HEAD_SIZE * 0.15 * scaleFactor
       const eyeGeometry = new THREE.BoxGeometry(eyeSize, eyeSize, eyeSize * 0.5)
@@ -115,8 +116,9 @@ export class BlockmanBuilder {
       const eyeOffsetY = dim.HEAD_SIZE * 0.1 * scaleFactor
       const eyeOffsetZ = dim.HEAD_SIZE * 0.5 * scaleFactor
       
-      leftEye.position.set(-eyeOffsetX, headY + eyeOffsetY, eyeOffsetZ)
-      rightEye.position.set(eyeOffsetX, headY + eyeOffsetY, eyeOffsetZ)
+      // Eyes on -Z side (front of character, facing forward)
+      leftEye.position.set(-eyeOffsetX, headY + eyeOffsetY, -eyeOffsetZ)
+      rightEye.position.set(eyeOffsetX, headY + eyeOffsetY, -eyeOffsetZ)
       
       group.add(leftEye)
       group.add(rightEye)
