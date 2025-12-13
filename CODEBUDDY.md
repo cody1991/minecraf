@@ -23,6 +23,7 @@ Auto-generated from all feature plans. Last updated: 2025-12-13
 - LocalStorage（玩家偏好） (013-character-model-view)
 - TypeScript + HTML/CSS (Vite 项目) + 无新增依赖（仅修改 HTML 内容） (001-update-controls-panel)
 - TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3 (016-fix-animal-spawning)
+- TypeScript 5.x + Three.js (WebGL 2.0), Vite (016-fix-animal-spawning)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -42,10 +43,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 016-fix-animal-spawning: Added TypeScript 5.x + Three.js (WebGL 2.0), Vite
 - 016-fix-animal-spawning: Added TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3
 - 001-update-controls-panel: Added TypeScript + HTML/CSS (Vite 项目) + 无新增依赖（仅修改 HTML 内容）
-- 013-character-model-view: Added TypeScript 5.6 + ES2020 + Three.js 0.170.0, Vite 6.0
-- 012-sound-map-system: Added TypeScript 5.6 + ES2020 + Three.js 0.170.0, Vite 6.0, Web Audio API (原生)
 
 
 <!-- MANUAL ADDITIONS START -->
