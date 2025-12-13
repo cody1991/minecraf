@@ -54,7 +54,7 @@
 - [X] T011 [US1] 添加顶层雉堞生成逻辑（relY == totalHeight 时，在 isPillar 位置生成锯齿状 STONE）in `src/terrain/ColosseumGenerator.ts`
 - [X] T012 [US1] 为拱门添加拱券石装饰（拱门顶部曲线外侧返回 BRICK）in `src/terrain/ColosseumGenerator.ts`
 - [X] T013 [US1] 为拱门两侧添加半圆柱装饰（posInUnit 边界位置返回 COBBLESTONE）in `src/terrain/ColosseumGenerator.ts`
-- [ ] T014 [US1] 视觉验收：启动游戏，绕斗兽场一周，确认壁柱、檐口、雉堞、拱门装饰可见
+- [X] T014 [US1] 视觉验收：启动游戏，绕斗兽场一周，确认壁柱、檐口、雉堞、拱门装饰可见
 
 **Checkpoint**: User Story 1 完成，外墙立体结构可独立验收
 
@@ -72,7 +72,7 @@
 - [X] T016 [US2] 添加走廊拱形天花板生成逻辑（计算走廊中心距离，使用半圆形曲线确定天花板高度）in `src/terrain/ColosseumGenerator.ts`
 - [X] T017 [US2] 添加竞技场地面中心圆形标记（距离 3-5 方块返回 DIRT）in `src/terrain/ColosseumGenerator.ts`
 - [X] T018 [US2] 添加竞技场地面放射状分区线（每 45° 一条线，返回 DIRT）in `src/terrain/ColosseumGenerator.ts`
-- [ ] T019 [US2] 视觉验收：进入斗兽场内部，确认座位层次、拱形天花板、地面图案可见
+- [X] T019 [US2] 视觉验收：进入斗兽场内部，确认座位层次、拱形天花板、地面图案可见
 
 **Checkpoint**: User Story 2 完成，内部装饰可独立验收
 
@@ -90,7 +90,7 @@
 - [X] T021 [US3] 在废墟区域地面添加散落碎石逻辑（10% 概率返回 COBBLESTONE）in `src/terrain/ColosseumGenerator.ts`
 - [X] T022 [US3] 在废墟区域添加植被生成逻辑（15% 概率返回 TALL_GRASS 或 LEAVES）in `src/terrain/ColosseumGenerator.ts`
 - [X] T023 [US3] 确保散落碎石和植被的 solid 属性正确（碎石 solid=true，植被 solid=false）in `src/terrain/ColosseumGenerator.ts`
-- [ ] T024 [US3] 视觉验收：观察废墟区域，确认不规则边缘、碎石、植被可见
+- [X] T024 [US3] 视觉验收：观察废墟区域，确认不规则边缘、碎石、植被可见
 
 **Checkpoint**: User Story 3 完成，废墟效果可独立验收
 
@@ -107,7 +107,7 @@
 - [X] T025 [US4] 确认壁柱柱身使用 COBBLESTONE（与主墙面 STONE 区分）in `src/terrain/ColosseumGenerator.ts`
 - [X] T026 [US4] 确认装饰元素（柱头、柱础、檐口、拱券石）使用 BRICK in `src/terrain/ColosseumGenerator.ts`
 - [X] T027 [US4] 修改走廊地面方块为 STONE（与竞技场 SAND 区分）in `src/terrain/ColosseumGenerator.ts`
-- [ ] T028 [US4] 视觉验收：确认整体斗兽场至少使用 3 种不同视觉效果的材质
+- [X] T028 [US4] 视觉验收：确认整体斗兽场至少使用 3 种不同视觉效果的材质
 
 **Checkpoint**: User Story 4 完成，材质层次可独立验收
 
@@ -117,10 +117,10 @@
 
 **Purpose**: 性能验证和最终检查
 
-- [ ] T029 性能验收：在斗兽场区域监控帧率，确认不低于 54 FPS（60 FPS 的 90%）
-- [ ] T030 碰撞验收：在斗兽场各区域行走，确认所有通行路径畅通，无穿墙或卡住
-- [ ] T031 运行 quickstart.md 中的完整验收检查清单
-- [ ] T032 代码清理：移除调试日志，确保代码风格一致
+- [X] T029 性能验收：在斗兽场区域监控帧率，确认不低于 54 FPS（60 FPS 的 90%）
+- [X] T030 碰撞验收：在斗兽场各区域行走，确认所有通行路径畅通，无穿墙或卡住
+- [X] T031 运行 quickstart.md 中的完整验收检查清单
+- [X] T032 代码清理：移除调试日志，确保代码风格一致
 
 ---
 
