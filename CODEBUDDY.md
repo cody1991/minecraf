@@ -37,9 +37,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 011-ancient-landmarks: Added TypeScript 5.6 + Three.js 0.170.0, Vite 6.0
 - 010-colosseum-enhancement: Added TypeScript 5.x + Three.js (WebGL 渲染), Vite (构建工具)
 - 009-ecosystem-flora-fauna: Added TypeScript 5.6 (ES2020 target) + Three.js 0.170.0, Vite 6.0
-- 008-biome-weather-system: Added TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3
 
 
 <!-- MANUAL ADDITIONS START -->

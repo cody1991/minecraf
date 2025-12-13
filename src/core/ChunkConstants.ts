@@ -116,6 +116,21 @@ export const SPAWN_SAFE_RADIUS = 60
 export const COLOSSEUM_FLAT_RADIUS = 50
 
 // =============================================================================
+// Landmark Zone Configuration (011-ancient-landmarks)
+// =============================================================================
+
+/** Landmark zone radius - expanded flat area for all ancient landmarks */
+export const LANDMARK_ZONE_RADIUS = 200
+
+/** Building default positions */
+export const PYRAMID_POSITION = { x: 100, z: 0 }
+export const FORBIDDEN_CITY_POSITION = { x: -70, z: 80 }
+export const CASTLE_POSITION = { x: -70, z: -80 }
+
+/** Minimum spacing between landmarks */
+export const MIN_LANDMARK_SPACING = 50
+
+// =============================================================================
 // Cave Generation Configuration
 // =============================================================================
 

@@ -14,10 +14,10 @@ export const GRAVITY = 32
 
 /**
  * Jump initial velocity in blocks per second
- * Calculated to achieve ~1.13 blocks jump height
- * Formula: height = v²/(2g) → v = √(2gh) ≈ 8.5 for h=1.13
+ * Calculated to achieve ~1.27 blocks jump height
+ * Formula: height = v²/(2g) → v = √(2gh) ≈ 9.0 for h=1.27
  */
-export const JUMP_VELOCITY = 8.5
+export const JUMP_VELOCITY = 9.0
 
 /**
  * Maximum falling speed in blocks per second

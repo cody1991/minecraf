@@ -163,16 +163,6 @@ export class ColosseumGenerator {
   }
 
   /**
-   * Check if position is a pilaster (decorative column) position
-   * T005: Pilasters are at pillar positions on outer facade
-   */
-  private isPilasterPosition(angle: number, levelY: number): boolean {
-    const { isPillar } = this.getArchPosition(angle)
-    // Pilasters span the full height of each level except entablature
-    return isPillar && levelY > 0 && levelY < this.config.levelHeight - 1
-  }
-
-  /**
    * Check if position is a cornice (horizontal band) position
    * T006: Cornices are at top and bottom of each level
    */
@@ -572,8 +562,8 @@ export class ColosseumGenerator {
       const tierTopHeight = tierBaseHeight + 1
       
       // T015: Material selection based on tier index (每3排区分)
-      const tierMaterials = [BlockType.STONE, BlockType.COBBLESTONE, BlockType.BRICK]
-      const tierMaterial = tierMaterials[tierIndex % 3]
+      const tierMaterials: BlockType[] = [BlockType.STONE, BlockType.COBBLESTONE, BlockType.BRICK]
+      const tierMaterial = tierMaterials[tierIndex % 3]!
       
       if (relY < tierBaseHeight) {
         // Solid foundation under tier

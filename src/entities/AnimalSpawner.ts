@@ -176,7 +176,9 @@ export class AnimalSpawner {
       const surfaceY = this.world.getHeightAt(worldX, worldZ)
       
       if (surfaceY >= this.config.minY) {
-        return new THREE.Vector3(worldX + 0.5, surfaceY + 1, worldZ + 0.5)
+        // Spawn slightly above ground, let gravity handle landing
+        // This prevents animals from spawning inside terrain
+        return new THREE.Vector3(worldX + 0.5, surfaceY + 2, worldZ + 0.5)
       }
     }
     

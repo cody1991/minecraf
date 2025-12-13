@@ -39,7 +39,15 @@ export enum BlockType {
   SPRUCE_LOG = 27,
   OAK_LEAVES = 28,
   BIRCH_LEAVES = 29,
-  SPRUCE_LEAVES = 30
+  SPRUCE_LEAVES = 30,
+  // Ancient landmarks blocks (011-ancient-landmarks)
+  SANDSTONE = 31,        // 金字塔沙石
+  SANDSTONE_CARVED = 32, // 金字塔雕刻沙石
+  RED_BRICK = 33,        // 故宫红砖
+  GOLD_BLOCK = 34,       // 故宫金色装饰
+  DARK_STONE = 35,       // 城堡深色石头
+  MOSSY_STONE = 36,      // 城堡苔藓石头
+  TORCH = 37             // 火把照明
 }
 
 /**
@@ -91,7 +99,15 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.SPRUCE_LOG]: '云杉原木',
   [BlockType.OAK_LEAVES]: '橡树树叶',
   [BlockType.BIRCH_LEAVES]: '桦树树叶',
-  [BlockType.SPRUCE_LEAVES]: '云杉树叶'
+  [BlockType.SPRUCE_LEAVES]: '云杉树叶',
+  // Ancient landmarks blocks (011-ancient-landmarks)
+  [BlockType.SANDSTONE]: '沙石',
+  [BlockType.SANDSTONE_CARVED]: '雕刻沙石',
+  [BlockType.RED_BRICK]: '红砖',
+  [BlockType.GOLD_BLOCK]: '金块',
+  [BlockType.DARK_STONE]: '深色石头',
+  [BlockType.MOSSY_STONE]: '苔藓石头',
+  [BlockType.TORCH]: '火把'
 }
 
 /**
@@ -131,7 +147,15 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.SPRUCE_LOG]: 0x4a3728,
   [BlockType.OAK_LEAVES]: 0x3d9140,
   [BlockType.BIRCH_LEAVES]: 0x5a9f4a,
-  [BlockType.SPRUCE_LEAVES]: 0x2d5a2d
+  [BlockType.SPRUCE_LEAVES]: 0x2d5a2d,
+  // Ancient landmarks blocks (011-ancient-landmarks)
+  [BlockType.SANDSTONE]: 0xd4b896,
+  [BlockType.SANDSTONE_CARVED]: 0xc4a876,
+  [BlockType.RED_BRICK]: 0x8b2323,
+  [BlockType.GOLD_BLOCK]: 0xffd700,
+  [BlockType.DARK_STONE]: 0x4a4a4a,
+  [BlockType.MOSSY_STONE]: 0x5a6b4a,
+  [BlockType.TORCH]: 0xffcc00
 }
 
 /**
@@ -388,6 +412,63 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     transparent: true,
     opacity: 0.8,
     solid: true
+  },
+  // Ancient landmarks blocks (011-ancient-landmarks)
+  [BlockType.SANDSTONE]: {
+    name: '沙石',
+    nameEn: 'Sandstone',
+    color: 0xd4b896,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.SANDSTONE_CARVED]: {
+    name: '雕刻沙石',
+    nameEn: 'Carved Sandstone',
+    color: 0xc4a876,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.RED_BRICK]: {
+    name: '红砖',
+    nameEn: 'Red Brick',
+    color: 0x8b2323,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.GOLD_BLOCK]: {
+    name: '金块',
+    nameEn: 'Gold Block',
+    color: 0xffd700,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.DARK_STONE]: {
+    name: '深色石头',
+    nameEn: 'Dark Stone',
+    color: 0x4a4a4a,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.MOSSY_STONE]: {
+    name: '苔藓石头',
+    nameEn: 'Mossy Stone',
+    color: 0x5a6b4a,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.TORCH]: {
+    name: '火把',
+    nameEn: 'Torch',
+    color: 0xffcc00,
+    transparent: true,
+    opacity: 1,
+    solid: false
   }
 }
 

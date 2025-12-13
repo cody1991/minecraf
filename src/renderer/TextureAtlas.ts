@@ -36,7 +36,7 @@ export interface TextureAtlasConfig {
 const DEFAULT_CONFIG: TextureAtlasConfig = {
   imagePath: '/textures/blocks.png',
   tileSize: 16,
-  columns: 16,
+  columns: 24,  // Expanded for landmark blocks
   rows: 3
 }
 
@@ -121,6 +121,14 @@ export class TextureAtlas {
     this.generateLogSide(ctx, TextureIndex.LOG_SIDE, 0)
     this.generateSolidTexture(ctx, TextureIndex.PLANKS, 0, BLOCK_COLORS[BlockType.PLANKS], 'planks')
     this.generateSolidTexture(ctx, TextureIndex.SNOW, 0, BLOCK_COLORS[BlockType.SNOW], 'snow')
+    // Ancient landmarks blocks (011-ancient-landmarks)
+    this.generateSandstoneTexture(ctx, TextureIndex.SANDSTONE, 0)
+    this.generateCarvedSandstoneTexture(ctx, TextureIndex.SANDSTONE_CARVED, 0)
+    this.generateRedBrickTexture(ctx, TextureIndex.RED_BRICK, 0)
+    this.generateGoldBlockTexture(ctx, TextureIndex.GOLD_BLOCK, 0)
+    this.generateDarkStoneTexture(ctx, TextureIndex.DARK_STONE, 0)
+    this.generateMossyStoneTexture(ctx, TextureIndex.MOSSY_STONE, 0)
+    this.generateTorchTexture(ctx, TextureIndex.TORCH, 0)
 
     const texture = new THREE.CanvasTexture(this.canvas)
     texture.magFilter = THREE.NearestFilter
@@ -395,6 +403,252 @@ export class TextureAtlas {
       ctx.fillStyle = Math.random() > 0.5 ? '#7b5433' : '#5b3413'
       ctx.fillRect(px, py, 1, 1)
     }
+  }
+
+  /**
+   * Generate sandstone texture (011-ancient-landmarks)
+   */
+  private generateSandstoneTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base sandstone color
+    ctx.fillStyle = '#d4b896'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add sandy variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const r = Math.max(0, Math.min(255, 212 + noise))
+        const g = Math.max(0, Math.min(255, 184 + noise))
+        const b = Math.max(0, Math.min(255, 150 + noise))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Horizontal lines for layered look
+    ctx.strokeStyle = 'rgba(160, 130, 100, 0.3)'
+    ctx.lineWidth = 1
+    for (let py = 4; py < tileSize; py += 4) {
+      ctx.beginPath()
+      ctx.moveTo(x, y + py)
+      ctx.lineTo(x + tileSize, y + py)
+      ctx.stroke()
+    }
+  }
+
+  /**
+   * Generate carved sandstone texture (011-ancient-landmarks)
+   */
+  private generateCarvedSandstoneTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base carved sandstone color (slightly darker)
+    ctx.fillStyle = '#c4a876'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 20
+        const r = Math.max(0, Math.min(255, 196 + noise))
+        const g = Math.max(0, Math.min(255, 168 + noise))
+        const b = Math.max(0, Math.min(255, 118 + noise))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Carved pattern (simple geometric)
+    ctx.strokeStyle = 'rgba(100, 80, 50, 0.5)'
+    ctx.lineWidth = 1
+    // Border
+    ctx.strokeRect(x + 2, y + 2, tileSize - 4, tileSize - 4)
+    // Inner decoration
+    ctx.strokeRect(x + 4, y + 4, tileSize - 8, tileSize - 8)
+  }
+
+  /**
+   * Generate red brick texture for Forbidden City (011-ancient-landmarks)
+   */
+  private generateRedBrickTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Dark mortar background
+    ctx.fillStyle = '#4a2020'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Red brick pattern
+    const brickHeight = 4
+    const brickWidth = 8
+    
+    for (let brickRow = 0; brickRow < tileSize / brickHeight; brickRow++) {
+      const offset = (brickRow % 2) * (brickWidth / 2)
+      for (let brickCol = 0; brickCol < tileSize / brickWidth + 1; brickCol++) {
+        const bx = x + brickCol * brickWidth - offset
+        const by = y + brickRow * brickHeight
+        
+        // Deep red brick with slight color variation
+        const shade = Math.random() > 0.5 ? '#8b2323' : '#7a1f1f'
+        ctx.fillStyle = shade
+        ctx.fillRect(
+          Math.max(x, bx + 1), 
+          by + 1, 
+          Math.min(brickWidth - 1, x + tileSize - bx - 1), 
+          brickHeight - 1
+        )
+      }
+    }
+  }
+
+  /**
+   * Generate gold block texture (011-ancient-landmarks)
+   */
+  private generateGoldBlockTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base gold color
+    ctx.fillStyle = '#ffd700'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add metallic variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 40
+        const r = Math.max(0, Math.min(255, 255 + noise * 0.3))
+        const g = Math.max(0, Math.min(255, 215 + noise))
+        const b = Math.max(0, Math.min(255, 0 + Math.abs(noise) * 0.5))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Highlight
+    ctx.fillStyle = 'rgba(255, 255, 200, 0.4)'
+    ctx.fillRect(x + 2, y + 2, 4, 4)
+
+    // Border
+    ctx.strokeStyle = 'rgba(180, 150, 0, 0.5)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
+  }
+
+  /**
+   * Generate dark stone texture for Castle (011-ancient-landmarks)
+   */
+  private generateDarkStoneTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base dark stone color
+    ctx.fillStyle = '#4a4a4a'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add stone variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 30
+        const shade = Math.max(0, Math.min(255, 74 + noise))
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Stone block pattern
+    ctx.strokeStyle = 'rgba(30, 30, 30, 0.4)'
+    ctx.lineWidth = 1
+    // Horizontal lines
+    ctx.beginPath()
+    ctx.moveTo(x, y + 8)
+    ctx.lineTo(x + tileSize, y + 8)
+    ctx.stroke()
+    // Vertical lines (offset)
+    ctx.beginPath()
+    ctx.moveTo(x + 8, y)
+    ctx.lineTo(x + 8, y + 8)
+    ctx.moveTo(x + 4, y + 8)
+    ctx.lineTo(x + 4, y + tileSize)
+    ctx.moveTo(x + 12, y + 8)
+    ctx.lineTo(x + 12, y + tileSize)
+    ctx.stroke()
+  }
+
+  /**
+   * Generate mossy stone texture (011-ancient-landmarks)
+   */
+  private generateMossyStoneTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base dark stone
+    ctx.fillStyle = '#4a4a4a'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add stone variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const shade = Math.max(0, Math.min(255, 74 + noise))
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Add moss patches
+    for (let i = 0; i < tileSize * 3; i++) {
+      const px = x + Math.floor(Math.random() * tileSize)
+      const py = y + Math.floor(Math.random() * tileSize)
+      const shade = Math.random() > 0.5 ? '#5a6b4a' : '#4a5b3a'
+      ctx.fillStyle = shade
+      ctx.fillRect(px, py, 1 + Math.floor(Math.random() * 2), 1 + Math.floor(Math.random() * 2))
+    }
+  }
+
+  /**
+   * Generate torch texture (011-ancient-landmarks)
+   */
+  private generateTorchTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+    const cx = x + tileSize / 2
+    const cy = y + tileSize / 2
+
+    // Transparent background
+    ctx.clearRect(x, y, tileSize, tileSize)
+
+    // Torch handle
+    ctx.fillStyle = '#6b4423'
+    ctx.fillRect(cx - 1, cy, 2, tileSize / 2)
+
+    // Flame glow
+    ctx.fillStyle = 'rgba(255, 200, 50, 0.6)'
+    ctx.beginPath()
+    ctx.arc(cx, cy - 2, 4, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Flame core
+    ctx.fillStyle = '#ffcc00'
+    ctx.beginPath()
+    ctx.ellipse(cx, cy - 2, 2, 3, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Flame tip
+    ctx.fillStyle = '#ff6600'
+    ctx.beginPath()
+    ctx.ellipse(cx, cy - 4, 1, 2, 0, 0, Math.PI * 2)
+    ctx.fill()
   }
 
   /**

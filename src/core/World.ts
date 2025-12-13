@@ -39,6 +39,7 @@ export interface WorldConfig {
   enableCaves?: boolean
   enableColosseum?: boolean
   colosseumConfig?: Partial<ColosseumConfig>
+  enableLandmarks?: boolean
 }
 
 /**
@@ -86,6 +87,12 @@ export class World {
     const enableColosseum = config.enableColosseum ?? true
     if (enableColosseum) {
       this.terrainGenerator.enableColosseum(config.colosseumConfig)
+    }
+
+    // Initialize landmark structures if enabled (default: true)
+    const enableLandmarks = config.enableLandmarks ?? true
+    if (enableLandmarks) {
+      this.terrainGenerator.enableLandmarks()
     }
   }
 

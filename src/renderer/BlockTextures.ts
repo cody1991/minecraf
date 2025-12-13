@@ -47,6 +47,14 @@ export const TextureIndex = {
   LOG_SIDE: 12,
   PLANKS: 13,
   SNOW: 14,
+  // Ancient landmarks blocks (011-ancient-landmarks)
+  SANDSTONE: 15,
+  SANDSTONE_CARVED: 16,
+  RED_BRICK: 17,
+  GOLD_BLOCK: 18,
+  DARK_STONE: 19,
+  MOSSY_STONE: 20,
+  TORCH: 21,
 } as const
 
 /**
@@ -150,6 +158,42 @@ export const BLOCK_TEXTURE_MAPS: Partial<Record<BlockType, BlockTextureMap>> = {
     top: TextureIndex.LEAVES,
     bottom: TextureIndex.LEAVES,
     side: TextureIndex.LEAVES
+  },
+  // Ancient landmarks blocks (011-ancient-landmarks)
+  [BlockType.SANDSTONE]: {
+    top: TextureIndex.SANDSTONE,
+    bottom: TextureIndex.SANDSTONE,
+    side: TextureIndex.SANDSTONE
+  },
+  [BlockType.SANDSTONE_CARVED]: {
+    top: TextureIndex.SANDSTONE_CARVED,
+    bottom: TextureIndex.SANDSTONE_CARVED,
+    side: TextureIndex.SANDSTONE_CARVED
+  },
+  [BlockType.RED_BRICK]: {
+    top: TextureIndex.RED_BRICK,
+    bottom: TextureIndex.RED_BRICK,
+    side: TextureIndex.RED_BRICK
+  },
+  [BlockType.GOLD_BLOCK]: {
+    top: TextureIndex.GOLD_BLOCK,
+    bottom: TextureIndex.GOLD_BLOCK,
+    side: TextureIndex.GOLD_BLOCK
+  },
+  [BlockType.DARK_STONE]: {
+    top: TextureIndex.DARK_STONE,
+    bottom: TextureIndex.DARK_STONE,
+    side: TextureIndex.DARK_STONE
+  },
+  [BlockType.MOSSY_STONE]: {
+    top: TextureIndex.MOSSY_STONE,
+    bottom: TextureIndex.MOSSY_STONE,
+    side: TextureIndex.MOSSY_STONE
+  },
+  [BlockType.TORCH]: {
+    top: TextureIndex.TORCH,
+    bottom: TextureIndex.TORCH,
+    side: TextureIndex.TORCH
   }
 }
 

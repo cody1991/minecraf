@@ -17,10 +17,12 @@ import {
   blockIndex,
   WATER_LEVEL,
   COLOSSEUM_FLAT_RADIUS,
+  LANDMARK_ZONE_RADIUS,
 } from '../core/ChunkConstants'
 import { NoiseGenerator } from './NoiseGenerator'
 import { CaveGenerator } from './CaveGenerator'
 import { ColosseumGenerator, ColosseumConfig } from './ColosseumGenerator'
+import { LandmarkManager } from './LandmarkManager'
 import { BiomeGenerator } from './BiomeGenerator'
 import { BIOME_CONFIGS } from './BiomeTypes'
 import { PlantGenerator } from './PlantGenerator'
@@ -39,6 +41,7 @@ export class TerrainGenerator {
   private treeGenerator: TreeGenerator
   private caveGenerator: CaveGenerator | null = null
   private colosseumGenerator: ColosseumGenerator | null = null
+  private landmarkManager: LandmarkManager | null = null
 
   // Height cache for performance (key: "x,z")
   private heightCache: Map<string, number> = new Map()
@@ -77,6 +80,21 @@ export class TerrainGenerator {
    */
   getColosseumGenerator(): ColosseumGenerator | null {
     return this.colosseumGenerator
+  }
+
+  /**
+   * Enable landmark structures (Pyramid, Forbidden City, Castle)
+   */
+  enableLandmarks(): void {
+    const baseHeight = this.getHeightAt(0, 0)
+    this.landmarkManager = new LandmarkManager(baseHeight)
+  }
+
+  /**
+   * Get the landmark manager (if enabled)
+   */
+  getLandmarkManager(): LandmarkManager | null {
+    return this.landmarkManager
   }
 
   /**
@@ -218,9 +236,10 @@ export class TerrainGenerator {
       const worldX = worldOffsetX + pos.x
       const worldZ = worldOffsetZ + pos.z
       
-      // Skip spawn area (Colosseum flat radius)
+      // Skip landmark zone (no plants/trees in landmark area)
       const distanceFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ)
-      if (distanceFromOrigin < COLOSSEUM_FLAT_RADIUS) continue
+      const noVegetationRadius = this.landmarkManager ? LANDMARK_ZONE_RADIUS : COLOSSEUM_FLAT_RADIUS
+      if (distanceFromOrigin < noVegetationRadius) continue
 
       // Check if plant should spawn
       if (!this.plantGenerator.shouldSpawnPlant(worldX, worldZ, pos.biome)) continue
@@ -259,10 +278,11 @@ export class TerrainGenerator {
       return cached
     }
 
-    // Colosseum protection zone - force flat terrain at base height
+    // Landmark zone - force flat terrain for all ancient landmarks
     const distanceFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ)
-    if (distanceFromOrigin < COLOSSEUM_FLAT_RADIUS) {
-      // Use fixed base height for flat terrain around Colosseum
+    const flatRadius = this.landmarkManager ? LANDMARK_ZONE_RADIUS : COLOSSEUM_FLAT_RADIUS
+    if (distanceFromOrigin < flatRadius) {
+      // Use fixed base height for flat terrain around landmarks
       const height = this.config.baseHeight
       this.heightCache.set(cacheKey, height)
       return height
@@ -313,7 +333,15 @@ export class TerrainGenerator {
     worldZ: number,
     terrainHeight: number
   ): BlockType {
-    // Check Colosseum structure first (if enabled)
+    // Check landmark structures first (if enabled)
+    if (this.landmarkManager) {
+      const landmarkBlock = this.landmarkManager.getBlockAt(worldX, worldY, worldZ)
+      if (landmarkBlock !== null) {
+        return landmarkBlock
+      }
+    }
+
+    // Check Colosseum structure (if enabled)
     if (this.colosseumGenerator) {
       const colosseumBlock = this.colosseumGenerator.getBlockAt(worldX, worldY, worldZ)
       if (colosseumBlock !== null) {
