@@ -11,10 +11,12 @@ import { Cow } from './Cow'
 import { Sheep } from './Sheep'
 import { Pig } from './Pig'
 import { Chicken } from './Chicken'
+import { Rabbit } from './Rabbit'
+import { Wolf } from './Wolf'
+import { Fox } from './Fox'
 import { BiomeType } from '../terrain/BiomeTypes'
 import { World } from '../core/World'
-
-import { COLOSSEUM_FLAT_RADIUS } from '../core/ChunkConstants'
+import { isInSpawnProtectionZone } from '../terrain/SpawnProtection'
 
 /**
  * Configuration for animal spawning
@@ -26,32 +28,38 @@ export interface SpawnConfig {
 }
 
 const DEFAULT_SPAWN_CONFIG: SpawnConfig = {
-  maxPerChunk: 4,
-  spawnChance: 0.3,  // 30% chance per chunk
+  maxPerChunk: 6,
+  spawnChance: 0.25,  // 25% chance per chunk (reduced for less density)
   minY: 1
 }
 
 /**
  * Animal spawn weights by biome
  */
-const BIOME_SPAWN_WEIGHTS: Record<BiomeType, Record<AnimalType, number>> = {
+const BIOME_SPAWN_WEIGHTS: Record<BiomeType, Partial<Record<AnimalType, number>>> = {
   [BiomeType.PLAINS]: {
     [AnimalType.COW]: 3,
     [AnimalType.SHEEP]: 3,
     [AnimalType.PIG]: 2,
-    [AnimalType.CHICKEN]: 2
+    [AnimalType.CHICKEN]: 2,
+    [AnimalType.RABBIT]: 3,  // Rabbits common in plains
+    [AnimalType.FOX]: 1      // Foxes less common
   },
   [BiomeType.LAKE]: {
     [AnimalType.COW]: 0,
     [AnimalType.SHEEP]: 0,
     [AnimalType.PIG]: 1,
-    [AnimalType.CHICKEN]: 2
+    [AnimalType.CHICKEN]: 2,
+    [AnimalType.RABBIT]: 1
   },
   [BiomeType.MOUNTAIN]: {
     [AnimalType.COW]: 1,
     [AnimalType.SHEEP]: 3,
     [AnimalType.PIG]: 0,
-    [AnimalType.CHICKEN]: 1
+    [AnimalType.CHICKEN]: 1,
+    [AnimalType.WOLF]: 3,    // Wolves common in mountains
+    [AnimalType.FOX]: 2,     // Foxes in mountains
+    [AnimalType.RABBIT]: 1
   }
 }
 
@@ -135,10 +143,11 @@ export class AnimalSpawner {
   /**
    * Select animal type based on weights
    */
-  private selectAnimalType(weights: Record<AnimalType, number>, totalWeight: number): AnimalType | null {
+  private selectAnimalType(weights: Partial<Record<AnimalType, number>>, totalWeight: number): AnimalType | null {
     let random = Math.random() * totalWeight
     
     for (const [type, weight] of Object.entries(weights)) {
+      if (weight === undefined) continue
       random -= weight
       if (random <= 0) {
         return parseInt(type) as AnimalType
@@ -160,9 +169,8 @@ export class AnimalSpawner {
       const worldX = chunkX * 16 + localX
       const worldZ = chunkZ * 16 + localZ
       
-      // Skip spawn area (Colosseum flat radius)
-      const distanceFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ)
-      if (distanceFromOrigin < COLOSSEUM_FLAT_RADIUS) continue
+      // Skip spawn protection zone
+      if (isInSpawnProtectionZone(worldX, worldZ)) continue
       
       // Use terrain generator height directly (doesn't require chunk to be loaded)
       const surfaceY = this.world.getHeightAt(worldX, worldZ)
@@ -188,6 +196,12 @@ export class AnimalSpawner {
         return new Pig(x, y, z)
       case AnimalType.CHICKEN:
         return new Chicken(x, y, z)
+      case AnimalType.RABBIT:
+        return new Rabbit(x, y, z)
+      case AnimalType.WOLF:
+        return new Wolf(x, y, z)
+      case AnimalType.FOX:
+        return new Fox(x, y, z)
       default:
         return null
     }

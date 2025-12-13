@@ -117,6 +117,39 @@ export const BLOCK_TEXTURE_MAPS: Partial<Record<BlockType, BlockTextureMap>> = {
     top: TextureIndex.SNOW,
     bottom: TextureIndex.SNOW,
     side: TextureIndex.SNOW
+  },
+  // Tree-specific blocks (009-ecosystem-flora-fauna)
+  // All tree logs use the same LOG textures
+  [BlockType.OAK_LOG]: {
+    top: TextureIndex.LOG_TOP,
+    bottom: TextureIndex.LOG_TOP,
+    side: TextureIndex.LOG_SIDE
+  },
+  [BlockType.BIRCH_LOG]: {
+    top: TextureIndex.LOG_TOP,
+    bottom: TextureIndex.LOG_TOP,
+    side: TextureIndex.LOG_SIDE
+  },
+  [BlockType.SPRUCE_LOG]: {
+    top: TextureIndex.LOG_TOP,
+    bottom: TextureIndex.LOG_TOP,
+    side: TextureIndex.LOG_SIDE
+  },
+  // All tree leaves use the same LEAVES texture
+  [BlockType.OAK_LEAVES]: {
+    top: TextureIndex.LEAVES,
+    bottom: TextureIndex.LEAVES,
+    side: TextureIndex.LEAVES
+  },
+  [BlockType.BIRCH_LEAVES]: {
+    top: TextureIndex.LEAVES,
+    bottom: TextureIndex.LEAVES,
+    side: TextureIndex.LEAVES
+  },
+  [BlockType.SPRUCE_LEAVES]: {
+    top: TextureIndex.LEAVES,
+    bottom: TextureIndex.LEAVES,
+    side: TextureIndex.LEAVES
   }
 }
 

@@ -9,7 +9,7 @@
 
 import * as THREE from 'three'
 import { Chunk } from '../core/Chunk'
-import { BlockType, BLOCK_COLORS, isTransparent, isCrossPlant } from '../core/Block'
+import { BlockType, BLOCK_COLORS, isTransparent, isCrossPlant, isTreeLeaves } from '../core/Block'
 import { TextureAtlas } from './TextureAtlas'
 
 // Type for world block getter function
@@ -363,6 +363,10 @@ export class ChunkMesh {
 
     if (currentTransparent) {
       // Transparent block: render face if neighbor is different type
+      // Special case: all tree leaves types are treated as same type
+      if (isTreeLeaves(currentType) && isTreeLeaves(neighborType)) {
+        return false  // Don't render internal faces between any leaves types
+      }
       return neighborType !== currentType
     } else {
       // Opaque block: render face if neighbor is transparent

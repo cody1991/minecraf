@@ -1,6 +1,7 @@
 /**
  * Block types available in the game
  * Feature: 005-block-textures - Extended with 8 new block types
+ * Updated: 009-ecosystem-flora-fauna - Added tree and flower types
  */
 export enum BlockType {
   // Existing types
@@ -26,7 +27,19 @@ export enum BlockType {
   MUSHROOM_RED = 17,
   MUSHROOM_BROWN = 18,
   DEAD_BUSH = 19,
-  CACTUS = 20
+  CACTUS = 20,
+  // New flower types (009-ecosystem-flora-fauna)
+  ROSE = 21,
+  TULIP = 22,
+  DAISY = 23,
+  CORNFLOWER = 24,
+  // Tree-specific blocks (009-ecosystem-flora-fauna)
+  OAK_LOG = 25,
+  BIRCH_LOG = 26,
+  SPRUCE_LOG = 27,
+  OAK_LEAVES = 28,
+  BIRCH_LEAVES = 29,
+  SPRUCE_LEAVES = 30
 }
 
 /**
@@ -66,7 +79,19 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.MUSHROOM_RED]: '红蘑菇',
   [BlockType.MUSHROOM_BROWN]: '棕蘑菇',
   [BlockType.DEAD_BUSH]: '枯灌木',
-  [BlockType.CACTUS]: '仙人掌'
+  [BlockType.CACTUS]: '仙人掌',
+  // New flower types (009-ecosystem-flora-fauna)
+  [BlockType.ROSE]: '玫瑰',
+  [BlockType.TULIP]: '郁金香',
+  [BlockType.DAISY]: '雏菊',
+  [BlockType.CORNFLOWER]: '矢车菊',
+  // Tree-specific blocks (009-ecosystem-flora-fauna)
+  [BlockType.OAK_LOG]: '橡木原木',
+  [BlockType.BIRCH_LOG]: '桦木原木',
+  [BlockType.SPRUCE_LOG]: '云杉原木',
+  [BlockType.OAK_LEAVES]: '橡树树叶',
+  [BlockType.BIRCH_LEAVES]: '桦树树叶',
+  [BlockType.SPRUCE_LEAVES]: '云杉树叶'
 }
 
 /**
@@ -94,7 +119,19 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.MUSHROOM_RED]: 0xcc3333,
   [BlockType.MUSHROOM_BROWN]: 0x8b6914,
   [BlockType.DEAD_BUSH]: 0x8b6b47,
-  [BlockType.CACTUS]: 0x2d6b2d
+  [BlockType.CACTUS]: 0x2d6b2d,
+  // New flower types (009-ecosystem-flora-fauna)
+  [BlockType.ROSE]: 0xcc0033,
+  [BlockType.TULIP]: 0xff69b4,
+  [BlockType.DAISY]: 0xffffff,
+  [BlockType.CORNFLOWER]: 0x6495ed,
+  // Tree-specific blocks (009-ecosystem-flora-fauna)
+  [BlockType.OAK_LOG]: 0x6b4423,
+  [BlockType.BIRCH_LOG]: 0xd4c4a8,
+  [BlockType.SPRUCE_LOG]: 0x4a3728,
+  [BlockType.OAK_LEAVES]: 0x3d9140,
+  [BlockType.BIRCH_LEAVES]: 0x5a9f4a,
+  [BlockType.SPRUCE_LEAVES]: 0x2d5a2d
 }
 
 /**
@@ -269,6 +306,88 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     transparent: true,
     opacity: 1,
     solid: true  // Cactus is solid for collision
+  },
+  // New flower types (009-ecosystem-flora-fauna)
+  [BlockType.ROSE]: {
+    name: '玫瑰',
+    nameEn: 'Rose',
+    color: 0xcc0033,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.TULIP]: {
+    name: '郁金香',
+    nameEn: 'Tulip',
+    color: 0xff69b4,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DAISY]: {
+    name: '雏菊',
+    nameEn: 'Daisy',
+    color: 0xffffff,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.CORNFLOWER]: {
+    name: '矢车菊',
+    nameEn: 'Cornflower',
+    color: 0x6495ed,
+    transparent: true,
+    opacity: 1,
+    solid: false
+  },
+  // Tree-specific blocks (009-ecosystem-flora-fauna)
+  [BlockType.OAK_LOG]: {
+    name: '橡木原木',
+    nameEn: 'Oak Log',
+    color: 0x6b4423,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.BIRCH_LOG]: {
+    name: '桦木原木',
+    nameEn: 'Birch Log',
+    color: 0xd4c4a8,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.SPRUCE_LOG]: {
+    name: '云杉原木',
+    nameEn: 'Spruce Log',
+    color: 0x4a3728,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.OAK_LEAVES]: {
+    name: '橡树树叶',
+    nameEn: 'Oak Leaves',
+    color: 0x3d9140,
+    transparent: true,
+    opacity: 0.8,
+    solid: true
+  },
+  [BlockType.BIRCH_LEAVES]: {
+    name: '桦树树叶',
+    nameEn: 'Birch Leaves',
+    color: 0x5a9f4a,
+    transparent: true,
+    opacity: 0.8,
+    solid: true
+  },
+  [BlockType.SPRUCE_LEAVES]: {
+    name: '云杉树叶',
+    nameEn: 'Spruce Leaves',
+    color: 0x2d5a2d,
+    transparent: true,
+    opacity: 0.8,
+    solid: true
   }
 }
 
@@ -310,14 +429,40 @@ export function isCrossPlant(type: BlockType): boolean {
          type === BlockType.TALL_GRASS ||
          type === BlockType.MUSHROOM_RED ||
          type === BlockType.MUSHROOM_BROWN ||
-         type === BlockType.DEAD_BUSH
+         type === BlockType.DEAD_BUSH ||
+         // New flower types (009-ecosystem-flora-fauna)
+         type === BlockType.ROSE ||
+         type === BlockType.TULIP ||
+         type === BlockType.DAISY ||
+         type === BlockType.CORNFLOWER
 }
 
 /**
  * Check if a block type is a plant
  */
 export function isPlant(type: BlockType): boolean {
-  return type >= BlockType.FLOWER_RED && type <= BlockType.CACTUS
+  return (type >= BlockType.FLOWER_RED && type <= BlockType.CACTUS) ||
+         (type >= BlockType.ROSE && type <= BlockType.CORNFLOWER)
+}
+
+/**
+ * Check if a block type is a tree log
+ */
+export function isTreeLog(type: BlockType): boolean {
+  return type === BlockType.OAK_LOG ||
+         type === BlockType.BIRCH_LOG ||
+         type === BlockType.SPRUCE_LOG ||
+         type === BlockType.LOG
+}
+
+/**
+ * Check if a block type is tree leaves
+ */
+export function isTreeLeaves(type: BlockType): boolean {
+  return type === BlockType.OAK_LEAVES ||
+         type === BlockType.BIRCH_LEAVES ||
+         type === BlockType.SPRUCE_LEAVES ||
+         type === BlockType.LEAVES
 }
 
 /**

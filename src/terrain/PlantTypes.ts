@@ -1,6 +1,7 @@
 /**
  * PlantTypes - Plant block properties and biome mappings
  * Feature: 008-biome-weather-system
+ * Updated: 009-ecosystem-flora-fauna - Added new flower types
  */
 
 import { BlockType } from '../core/Block'
@@ -16,7 +17,12 @@ export const PLANT_BLOCKS: BlockType[] = [
   BlockType.MUSHROOM_RED,
   BlockType.MUSHROOM_BROWN,
   BlockType.DEAD_BUSH,
-  BlockType.CACTUS
+  BlockType.CACTUS,
+  // New flower types (009-ecosystem-flora-fauna)
+  BlockType.ROSE,
+  BlockType.TULIP,
+  BlockType.DAISY,
+  BlockType.CORNFLOWER
 ]
 
 /**
@@ -42,15 +48,22 @@ export const BIOME_PLANTS: Record<BiomeType, PlantSpawnConfig[]> = {
   [BiomeType.PLAINS]: [
     { type: BlockType.TALL_GRASS, weight: 10 },
     { type: BlockType.FLOWER_RED, weight: 2 },
-    { type: BlockType.FLOWER_YELLOW, weight: 2 }
+    { type: BlockType.FLOWER_YELLOW, weight: 2 },
+    // New flower types (009-ecosystem-flora-fauna)
+    { type: BlockType.ROSE, weight: 1.5 },
+    { type: BlockType.TULIP, weight: 1.5 },
+    { type: BlockType.DAISY, weight: 1.5 },
+    { type: BlockType.CORNFLOWER, weight: 1 }
   ],
   [BiomeType.LAKE]: [
-    { type: BlockType.TALL_GRASS, weight: 3 }
+    { type: BlockType.TALL_GRASS, weight: 3 },
+    { type: BlockType.DAISY, weight: 1 }
     // Less vegetation near water
   ],
   [BiomeType.MOUNTAIN]: [
     { type: BlockType.TALL_GRASS, weight: 4 },
-    { type: BlockType.DEAD_BUSH, weight: 2 }
+    { type: BlockType.DEAD_BUSH, weight: 2 },
+    { type: BlockType.CORNFLOWER, weight: 1 }
   ]
 }
 

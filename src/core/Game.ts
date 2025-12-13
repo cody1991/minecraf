@@ -17,6 +17,7 @@ import { Player } from '../player/Player'
 import { TimeSystem } from '../weather/TimeSystem'
 import { EntityManager } from '../entities/EntityManager'
 import { AnimalSpawner } from '../entities/AnimalSpawner'
+import { FishSpawner } from '../entities/FishSpawner'
 import { SkyRenderer } from '../weather/SkyRenderer'
 import { WeatherSystem } from '../weather/WeatherSystem'
 import { RainEffect } from '../weather/RainEffect'
@@ -33,6 +34,7 @@ export class Game {
   private timeSystem: TimeSystem
   private entityManager: EntityManager
   private animalSpawner: AnimalSpawner
+  private fishSpawner: FishSpawner
   private skyRenderer: SkyRenderer
   private weatherSystem: WeatherSystem
   private rainEffect: RainEffect
@@ -100,6 +102,9 @@ export class Game {
     // Initialize animal spawner
     this.animalSpawner = new AnimalSpawner(this.entityManager, this.world)
 
+    // Initialize fish spawner
+    this.fishSpawner = new FishSpawner(this.entityManager, this.world)
+
     // Initialize sky renderer
     this.skyRenderer = new SkyRenderer(this.renderer.getScene())
 
@@ -114,6 +119,7 @@ export class Game {
       // Only spawn animals on surface chunks (cy = 2 or 3 typically)
       if (cy >= 2) {
         this.animalSpawner.spawnInChunk(cx, cz)
+        this.fishSpawner.spawnInChunk(cx, cz)
       }
     }
     this.chunkManager.onChunkUnloaded = (cx, cy, cz) => {
@@ -121,6 +127,7 @@ export class Game {
       if (cy >= 2) {
         this.entityManager.removeChunk(cx, cz)
         this.animalSpawner.clearChunk(cx, cz)
+        this.fishSpawner.clearChunk(cx, cz)
       }
     }
 

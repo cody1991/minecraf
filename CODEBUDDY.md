@@ -35,9 +35,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 009-ecosystem-flora-fauna: Added TypeScript 5.6 (ES2020 target) + Three.js 0.170.0, Vite 6.0
 - 008-biome-weather-system: Added TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3
 - 007-underwater-display: Added TypeScript 5.6 + Three.js 0.170.0, Vite 6.0
-- 006-random-terrain-generation: Added TypeScript 5.6 + Three.js 0.170, Vite 6.0
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -21,7 +21,7 @@ export class EntityManager {
   private scene: THREE.Scene
 
   /** Maximum entities per chunk */
-  private readonly maxPerChunk: number = 4
+  private readonly maxPerChunk: number = 6
 
   constructor(scene: THREE.Scene) {
     this.scene = scene

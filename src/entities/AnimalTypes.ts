@@ -10,7 +10,11 @@ export enum AnimalType {
   COW = 0,
   SHEEP = 1,
   PIG = 2,
-  CHICKEN = 3
+  CHICKEN = 3,
+  // New animals (009-ecosystem-flora-fauna)
+  RABBIT = 4,
+  WOLF = 5,
+  FOX = 6
 }
 
 /**
@@ -94,6 +98,46 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMax: 6,
     fleeDistance: 4,
     safeDistance: 8
+  },
+  // New animals (009-ecosystem-flora-fauna)
+  [AnimalType.RABBIT]: {
+    type: AnimalType.RABBIT,
+    name: '兔子',
+    nameEn: 'Rabbit',
+    moveSpeed: 3.0,
+    fleeSpeed: 6.0,
+    idleTimeMin: 1,
+    idleTimeMax: 3,
+    wanderTimeMin: 2,
+    wanderTimeMax: 5,
+    fleeDistance: 5,
+    safeDistance: 10
+  },
+  [AnimalType.WOLF]: {
+    type: AnimalType.WOLF,
+    name: '狼',
+    nameEn: 'Wolf',
+    moveSpeed: 2.5,
+    fleeSpeed: 5.0,
+    idleTimeMin: 2,
+    idleTimeMax: 5,
+    wanderTimeMin: 3,
+    wanderTimeMax: 7,
+    fleeDistance: 4,
+    safeDistance: 8
+  },
+  [AnimalType.FOX]: {
+    type: AnimalType.FOX,
+    name: '狐狸',
+    nameEn: 'Fox',
+    moveSpeed: 2.8,
+    fleeSpeed: 5.5,
+    idleTimeMin: 1,
+    idleTimeMax: 4,
+    wanderTimeMin: 2,
+    wanderTimeMax: 6,
+    fleeDistance: 5,
+    safeDistance: 10
   }
 }
 

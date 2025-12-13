@@ -24,6 +24,7 @@ import { ColosseumGenerator, ColosseumConfig } from './ColosseumGenerator'
 import { BiomeGenerator } from './BiomeGenerator'
 import { BIOME_CONFIGS } from './BiomeTypes'
 import { PlantGenerator } from './PlantGenerator'
+import { TreeGenerator } from './TreeGenerator'
 
 /**
  * TerrainGenerator creates chunk block data using noise-based terrain generation
@@ -35,6 +36,7 @@ export class TerrainGenerator {
   private noise: NoiseGenerator
   private biomeGenerator: BiomeGenerator
   private plantGenerator: PlantGenerator
+  private treeGenerator: TreeGenerator
   private caveGenerator: CaveGenerator | null = null
   private colosseumGenerator: ColosseumGenerator | null = null
 
@@ -48,6 +50,7 @@ export class TerrainGenerator {
     this.noise = new NoiseGenerator(seed)
     this.biomeGenerator = new BiomeGenerator(seed)
     this.plantGenerator = new PlantGenerator(seed)
+    this.treeGenerator = new TreeGenerator(seed)
   }
 
   /**
@@ -125,7 +128,74 @@ export class TerrainGenerator {
     // Generate plants on surface
     this.generatePlants(blocks, surfacePositions, worldOffsetX, worldOffsetZ)
 
+    // Generate trees on surface (after plants to avoid conflicts)
+    this.generateTrees(blocks, surfacePositions, worldOffsetX, worldOffsetY, worldOffsetZ)
+
     return blocks
+  }
+
+  /**
+   * Generate trees on tracked surface positions
+   */
+  private generateTrees(
+    blocks: Uint8Array,
+    surfaces: Array<{x: number, z: number, y: number, biome: import('./BiomeTypes').BiomeType, surface: BlockType}>,
+    worldOffsetX: number,
+    worldOffsetY: number,
+    worldOffsetZ: number
+  ): void {
+    for (const pos of surfaces) {
+      // Only generate trees on grass
+      if (pos.surface !== BlockType.GRASS) continue
+
+      // Calculate actual world coordinates
+      const worldX = worldOffsetX + pos.x
+      const worldZ = worldOffsetZ + pos.z
+      const surfaceY = worldOffsetY + pos.y - 1 // pos.y is one above surface
+
+      // Check if tree should spawn at this position
+      if (!this.treeGenerator.shouldSpawnTree(worldX, worldZ, pos.biome)) continue
+
+      // Check spacing and spawn protection
+      if (!this.treeGenerator.canPlaceTree(worldX, worldZ)) continue
+
+      // Get tree type
+      const treeType = this.treeGenerator.getTreeType(worldX, worldZ, pos.biome)
+      if (treeType === null) continue
+
+      // Generate tree with callback to set blocks
+      this.treeGenerator.generateTree(
+        worldX,
+        surfaceY,
+        worldZ,
+        treeType,
+        (x, y, z, type) => {
+          // Convert world coords to local chunk coords
+          const localX = x - worldOffsetX
+          const localY = y - worldOffsetY
+          const localZ = z - worldOffsetZ
+
+          // Only set blocks within this chunk
+          if (localX >= 0 && localX < CHUNK_SIZE &&
+              localY >= 0 && localY < CHUNK_SIZE &&
+              localZ >= 0 && localZ < CHUNK_SIZE) {
+            const index = blockIndex(localX, localY, localZ)
+            // Don't overwrite existing solid blocks (except air and plants)
+            const existingBlock = blocks[index]
+            if (existingBlock === BlockType.AIR || 
+                existingBlock === BlockType.TALL_GRASS ||
+                existingBlock === BlockType.FLOWER_RED ||
+                existingBlock === BlockType.FLOWER_YELLOW ||
+                existingBlock === BlockType.ROSE ||
+                existingBlock === BlockType.TULIP ||
+                existingBlock === BlockType.DAISY ||
+                existingBlock === BlockType.CORNFLOWER) {
+              blocks[index] = type
+            }
+          }
+        }
+      )
+    }
   }
 
   /**
@@ -279,9 +349,15 @@ export class TerrainGenerator {
 
     // Surface layer = biome-specific block
     // If underwater, use sand instead of grass
+    // If in Colosseum flat area, use sand for arena-like appearance
     if (depthFromSurface === 0) {
       if (terrainHeight < WATER_LEVEL) {
         return BlockType.SAND // Underwater floor is sand
+      }
+      // Colosseum area uses sand for arena floor
+      const distanceFromOrigin = Math.sqrt(worldX * worldX + worldZ * worldZ)
+      if (distanceFromOrigin < COLOSSEUM_FLAT_RADIUS) {
+        return BlockType.SAND
       }
       return biomeConfig.surfaceBlock
     }

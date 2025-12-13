@@ -248,6 +248,13 @@ export class World {
   }
 
   /**
+   * Check if a position contains water
+   */
+  isWaterAt(worldX: number, worldY: number, worldZ: number): boolean {
+    return this.getBlock(worldX, worldY, worldZ) === BlockType.WATER
+  }
+
+  /**
    * Get spawn position (center of Colosseum arena, or terrain origin)
    */
   getSpawnPosition(): { x: number; y: number; z: number } {
