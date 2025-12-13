@@ -2,6 +2,7 @@
  * KeyboardInput - handles keyboard input
  * Feature: 012-sound-map-system - Added M key for map toggle
  * Feature: 013-character-model-view - Added V key for view toggle
+ * Feature: 018-world-save-system - Added Escape key for save panel
  */
 export class KeyboardInput {
   private keysDown: Set<string> = new Set()
@@ -10,6 +11,7 @@ export class KeyboardInput {
   private mapKeyPressed: boolean = false
   private viewTogglePressed: boolean = false
   private characterSelectPressed: boolean = false
+  private escapePressed: boolean = false
 
   constructor() {
     window.addEventListener('keydown', this.handleKeyDown.bind(this))
@@ -49,6 +51,11 @@ export class KeyboardInput {
     // C key for character select
     if (event.code === 'KeyC') {
       this.characterSelectPressed = true
+    }
+
+    // Escape key for save panel
+    if (event.code === 'Escape') {
+      this.escapePressed = true
     }
   }
 
@@ -135,6 +142,20 @@ export class KeyboardInput {
    */
   resetCharacterSelect(): void {
     this.characterSelectPressed = false
+  }
+
+  /**
+   * Check if Escape key was pressed this frame
+   */
+  wasEscapePressed(): boolean {
+    return this.escapePressed
+  }
+
+  /**
+   * Reset escape key state (call at end of frame)
+   */
+  resetEscape(): void {
+    this.escapePressed = false
   }
 
   /**

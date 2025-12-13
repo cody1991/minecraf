@@ -32,6 +32,9 @@ export class Chunk {
   /** Whether the mesh needs to be rebuilt */
   public isDirty: boolean = true
 
+  /** Whether the chunk has been modified by the player (for save system) */
+  public isModified: boolean = false
+
   /** Bounding box for frustum culling */
   public readonly boundingBox: THREE.Box3
 
@@ -89,6 +92,7 @@ export class Chunk {
 
     this.blocks[index] = type
     this.isDirty = true
+    this.isModified = true
   }
 
   /**

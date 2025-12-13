@@ -226,4 +226,49 @@ export class ChunkManager {
   isChunkLoaded(cx: number, cy: number, cz: number): boolean {
     return this.loadedChunks.has(chunkKey(cx, cy, cz))
   }
+
+  /**
+   * Reset the chunk manager state (call after World.resetWorld())
+   * Clears all loaded chunk tracking and renderer
+   */
+  reset(): void {
+    // Clear all chunk meshes from renderer
+    this.chunkRenderer.clear()
+    
+    // Clear tracking state
+    this.loadedChunks.clear()
+    this.loadQueue.clear()
+    this.lastPlayerChunkX = Infinity
+    this.lastPlayerChunkZ = Infinity
+  }
+
+  /**
+   * Force load all chunks in a radius immediately (synchronous)
+   * Used when teleporting player or creating new world to ensure ground exists
+   */
+  forceLoadRadius(playerX: number, playerY: number, playerZ: number, radius: number = 2): void {
+    const playerChunk = worldToChunk(playerX, playerY, playerZ)
+    
+    for (let dx = -radius; dx <= radius; dx++) {
+      for (let dz = -radius; dz <= radius; dz++) {
+        const distSq = dx * dx + dz * dz
+        if (distSq > radius * radius) continue
+        
+        const cx = playerChunk.x + dx
+        const cz = playerChunk.z + dz
+        
+        // Load all vertical chunks in this column
+        for (let cy = 0; cy < VERTICAL_CHUNKS; cy++) {
+          const key = chunkKey(cx, cy, cz)
+          if (!this.loadedChunks.has(key)) {
+            this.loadChunk(cx, cy, cz)
+          }
+        }
+      }
+    }
+    
+    // Update last position to prevent re-queuing
+    this.lastPlayerChunkX = playerChunk.x
+    this.lastPlayerChunkZ = playerChunk.z
+  }
 }

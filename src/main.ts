@@ -17,6 +17,9 @@ import { PreferenceManager } from './player/PreferenceManager'
 import { CharacterSelectUI } from './ui/CharacterSelectUI'
 import { initializeModelLibrary } from './models'
 import { ViewMode } from './player/CharacterTypes'
+import { SaveManager } from './storage/SaveManager'
+import { SavePanel } from './ui/SavePanel'
+import { AutoSave } from './storage/AutoSave'
 
 /**
  * WebCraft - Web 版我的世界
@@ -24,6 +27,7 @@ import { ViewMode } from './player/CharacterTypes'
  * Feature: 002-chunk-terrain-system
  * Feature: 012-sound-map-system - Added audio and map systems
  * Feature: 013-character-model-view - Added character model and view switching
+ * Feature: 018-world-save-system - Added save/load functionality
  */
 
 // Wait for DOM to be ready
@@ -124,6 +128,116 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create world map
   const worldMap = new WorldMap()
   worldMap.setWorld(game.getWorld())
+
+  // ============================================================================
+  // Save System Setup (Feature: 018-world-save-system)
+  // ============================================================================
+  
+  // Create save manager
+  const saveManager = new SaveManager()
+  
+  // Create save panel
+  const savePanel = new SavePanel(saveManager)
+  
+  // Create auto-save manager
+  const autoSave = new AutoSave(saveManager)
+  
+  // Initialize save system
+  saveManager.initialize().then((success) => {
+    if (success) {
+      console.log('[SaveSystem] Initialized successfully')
+      
+      // Set up auto-save data provider
+      autoSave.setDataProvider(() => ({
+        seed: game.getWorld().getSeed(),
+        playerState: player.getState(),
+        modifiedChunks: game.getWorld().getModifiedChunks(),
+      }))
+      
+      // Set up auto-save completion callback
+      autoSave.onSaveComplete((result) => {
+        if (result.success) {
+          console.log('[AutoSave] Completed successfully')
+        } else {
+          console.error('[AutoSave] Failed:', result.error)
+        }
+      })
+      
+      // Start auto-save
+      autoSave.start()
+      
+      // Check for auto-save on startup
+      saveManager.getAutoSave().then((autoSaveData) => {
+        if (autoSaveData) {
+          console.log('[SaveSystem] Found auto-save from:', new Date(autoSaveData.updatedAt).toLocaleString())
+        }
+      })
+    } else {
+      console.warn('[SaveSystem] Not available - browser may not support IndexedDB')
+    }
+  })
+  
+  // Set up save panel callbacks
+  savePanel.setCallbacks({
+    onSave: async (slotNumber, name) => {
+      return saveManager.save(slotNumber, name, {
+        seed: game.getWorld().getSeed(),
+        playerState: player.getState(),
+        modifiedChunks: game.getWorld().getModifiedChunks(),
+      })
+    },
+    onLoad: async (saveId) => {
+      const result = await saveManager.load(saveId)
+      if (!result.success || !result.saveData || !result.chunks) {
+        throw new Error(result.error || 'Load failed')
+      }
+      
+      // Reset world (clear all chunks)
+      game.getWorld().resetWorld()
+      game.getChunkManager().reset()
+      
+      // Restore player state first (so we know where to load chunks)
+      player.restoreState(result.saveData.playerState)
+      
+      // Force load chunks around player immediately (prevents falling)
+      game.getChunkManager().forceLoadRadius(
+        player.position.x,
+        player.position.y,
+        player.position.z,
+        3
+      )
+      
+      // Now apply saved chunk modifications on top of regenerated terrain
+      game.getWorld().restoreFromSave(result.chunks)
+      
+      // Update camera
+      cameraController.update(0)
+    },
+    onDelete: async (saveId) => {
+      return saveManager.delete(saveId)
+    },
+    onRename: async (saveId, newName) => {
+      return saveManager.rename(saveId, newName)
+    },
+    onNewWorld: async () => {
+      // Reset world with new seed
+      game.getWorld().resetWorld()
+      game.getChunkManager().reset()
+      
+      // Reset player to spawn
+      const spawn = game.getWorld().getSpawnPosition()
+      player.position.set(spawn.x, spawn.y, spawn.z)
+      player.velocity.set(0, 0, 0)
+      
+      // Force load chunks around player immediately (prevents falling)
+      game.getChunkManager().forceLoadRadius(spawn.x, spawn.y, spawn.z, 3)
+    },
+    getWorldData: () => ({
+      seed: game.getWorld().getSeed(),
+      playerState: player.getState(),
+      modifiedChunks: game.getWorld().getModifiedChunks(),
+    }),
+  })
 
   // Footstep sound state
   let footstepTimer = 0
@@ -290,6 +404,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const input = inputManager.getState()
       if (input.mapToggle) {
         worldMap.toggle()
+      }
+    }
+
+    // Handle save panel toggle (Escape key) - must be outside pointer lock check
+    // because pressing ESC exits pointer lock automatically
+    {
+      const input = inputManager.getState()
+      if (input.escapeMenu && !characterSelectUI.isVisible && !worldMap.opened) {
+        savePanel.toggle()
       }
     }
 

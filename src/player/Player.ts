@@ -171,4 +171,54 @@ export class Player {
     const prevIndex = (currentIndex - 1 + PLACEABLE_BLOCKS.length) % PLACEABLE_BLOCKS.length
     this.setSelectedBlockIndex(prevIndex)
   }
+
+  // ============================================================================
+  // Save System Methods (Feature: 018-world-save-system)
+  // ============================================================================
+
+  /**
+   * Get serializable player state for saving
+   */
+  getState(): {
+    position: { x: number; y: number; z: number }
+    rotation: { yaw: number; pitch: number }
+    selectedBlockIndex?: number
+  } {
+    return {
+      position: {
+        x: this.position.x,
+        y: this.position.y,
+        z: this.position.z,
+      },
+      rotation: {
+        yaw: this.rotation.y,
+        pitch: this.rotation.x,
+      },
+      selectedBlockIndex: this.getSelectedBlockIndex(),
+    }
+  }
+
+  /**
+   * Restore player state from save data
+   */
+  restoreState(state: {
+    position: { x: number; y: number; z: number }
+    rotation: { yaw: number; pitch: number }
+    selectedBlockIndex?: number
+  }): void {
+    // Restore position
+    this.position.set(state.position.x, state.position.y, state.position.z)
+    
+    // Restore rotation
+    this.rotation.y = state.rotation.yaw
+    this.rotation.x = state.rotation.pitch
+    
+    // Restore selected block
+    if (state.selectedBlockIndex !== undefined) {
+      this.setSelectedBlockIndex(state.selectedBlockIndex)
+    }
+    
+    // Reset velocity
+    this.velocity.set(0, 0, 0)
+  }
 }

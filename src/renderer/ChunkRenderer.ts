@@ -164,6 +164,19 @@ export class ChunkRenderer {
   }
 
   /**
+   * Clear all chunk meshes (for world reset)
+   * Unlike dispose(), this keeps shared resources intact
+   */
+  clear(): void {
+    for (const chunkMesh of this.chunkMeshes.values()) {
+      chunkMesh.dispose()
+    }
+    this.chunkMeshes.clear()
+    this.totalChunkCount = 0
+    this.visibleChunkCount = 0
+  }
+
+  /**
    * Dispose of all resources
    */
   dispose(): void {

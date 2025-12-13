@@ -349,6 +349,71 @@ export class World {
     this.chunks.clear()
     this.dirtyChunks.clear()
   }
+
+  // ============================================================================
+  // Save System Methods (Feature: 018-world-save-system)
+  // ============================================================================
+
+  /**
+   * Get all chunks that have been modified by the player
+   * @returns Array of chunk data with key and block data
+   */
+  getModifiedChunks(): Array<{ key: string; blocks: Uint8Array }> {
+    const modified: Array<{ key: string; blocks: Uint8Array }> = []
+    
+    for (const [key, chunk] of this.chunks) {
+      if (chunk.isModified) {
+        // Create a copy of the block data
+        const blocksCopy = new Uint8Array(chunk.blocks.length)
+        blocksCopy.set(chunk.blocks)
+        modified.push({ key, blocks: blocksCopy })
+      }
+    }
+    
+    return modified
+  }
+
+  /**
+   * Restore world state from save data
+   * @param chunks Array of chunk data to restore
+   */
+  restoreFromSave(chunks: Array<{ chunkKey: string; blocks: Uint8Array }>): void {
+    // Apply saved chunk data to loaded chunks
+    for (const chunkData of chunks) {
+      const [cxStr, cyStr, czStr] = chunkData.chunkKey.split(',')
+      const cx = parseInt(cxStr!, 10)
+      const cy = parseInt(cyStr!, 10)
+      const cz = parseInt(czStr!, 10)
+      
+      // Load the chunk if not already loaded
+      const chunk = this.loadChunk(cx, cy, cz)
+      
+      // Restore block data
+      chunk.blocks.set(chunkData.blocks)
+      chunk.isModified = true
+      chunk.isDirty = true
+      
+      // Mark as dirty for mesh rebuild
+      const key = chunkKey(cx, cy, cz)
+      this.dirtyChunks.add(key)
+    }
+  }
+
+  /**
+   * Reset world to initial state (for new world creation)
+   * Clears all chunks and generates new terrain
+   */
+  resetWorld(): void {
+    // Dispose all existing chunks
+    for (const chunk of this.chunks.values()) {
+      if (this.onChunkUnloaded) {
+        this.onChunkUnloaded(chunk)
+      }
+      chunk.dispose()
+    }
+    this.chunks.clear()
+    this.dirtyChunks.clear()
+  }
 }
 
 // Legacy exports for backward compatibility

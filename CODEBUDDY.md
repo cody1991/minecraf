@@ -25,6 +25,8 @@ Auto-generated from all feature plans. Last updated: 2025-12-13
 - TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3 (016-fix-animal-spawning)
 - TypeScript 5.x + Three.js (WebGL 2.0), Vite (016-fix-animal-spawning)
 - TypeScript 5.x + Three.js, Web Audio API, Vite (017-block-sound-effects)
+- TypeScript 5.6 + Three.js 0.170, Vite 6.0, 原生 IndexedDB API (018-world-save-system)
+- IndexedDB（浏览器本地存储） (018-world-save-system)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -44,9 +46,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 018-world-save-system: Added TypeScript 5.6 + Three.js 0.170, Vite 6.0, 原生 IndexedDB API
 - 017-block-sound-effects: Added TypeScript 5.x + Three.js, Web Audio API, Vite
 - 016-fix-animal-spawning: Added TypeScript 5.x + Three.js (WebGL 2.0), Vite
-- 016-fix-animal-spawning: Added TypeScript 5.6.2 + Three.js 0.170.0, Vite 6.0.3
 
 
 <!-- MANUAL ADDITIONS START -->

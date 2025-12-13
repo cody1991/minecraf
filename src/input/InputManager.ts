@@ -5,6 +5,7 @@ import { MouseInput } from './MouseInput'
  * Input state interface
  * Feature: 012-sound-map-system - Added mapToggle
  * Feature: 013-character-model-view - Added viewToggle
+ * Feature: 018-world-save-system - Added escapeMenu
  */
 export interface InputState {
   // Movement keys
@@ -42,6 +43,9 @@ export interface InputState {
 
   // C key for character select
   characterSelect: boolean
+
+  // Escape key for menu/save panel
+  escapeMenu: boolean
 }
 
 /**
@@ -75,7 +79,8 @@ export class InputManager {
       tabCycle: this.keyboardInput.wasTabPressed(),
       mapToggle: this.keyboardInput.wasMapKeyPressed(),
       viewToggle: this.keyboardInput.wasViewTogglePressed(),
-      characterSelect: this.keyboardInput.wasCharacterSelectPressed()
+      characterSelect: this.keyboardInput.wasCharacterSelectPressed(),
+      escapeMenu: this.keyboardInput.wasEscapePressed()
     }
   }
 
@@ -90,6 +95,7 @@ export class InputManager {
     this.keyboardInput.resetMapKey()
     this.keyboardInput.resetViewToggle()
     this.keyboardInput.resetCharacterSelect()
+    this.keyboardInput.resetEscape()
   }
 
   /**
