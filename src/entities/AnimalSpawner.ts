@@ -176,9 +176,9 @@ export class AnimalSpawner {
       const surfaceY = this.world.getHeightAt(worldX, worldZ)
       
       if (surfaceY >= this.config.minY) {
-        // Spawn slightly above ground, let gravity handle landing
-        // This prevents animals from spawning inside terrain
-        return new THREE.Vector3(worldX + 0.5, surfaceY + 2, worldZ + 0.5)
+        // Return ground level + 1 (top of ground block)
+        // Animal Y position will be adjusted in createAnimal based on animal height
+        return new THREE.Vector3(worldX + 0.5, surfaceY + 1, worldZ + 0.5)
       }
     }
     
@@ -187,26 +187,48 @@ export class AnimalSpawner {
 
   /**
    * Create animal instance
+   * @param type - Animal type to create
+   * @param x - X position
+   * @param groundY - Y position of ground surface (top of ground block)
+   * @param z - Z position
    */
-  private createAnimal(type: AnimalType, x: number, y: number, z: number): Animal | null {
+  private createAnimal(type: AnimalType, x: number, groundY: number, z: number): Animal | null {
+    let animal: Animal | null = null
+    
     switch (type) {
       case AnimalType.COW:
-        return new Cow(x, y, z)
+        animal = new Cow(x, groundY, z)
+        break
       case AnimalType.SHEEP:
-        return new Sheep(x, y, z)
+        animal = new Sheep(x, groundY, z)
+        break
       case AnimalType.PIG:
-        return new Pig(x, y, z)
+        animal = new Pig(x, groundY, z)
+        break
       case AnimalType.CHICKEN:
-        return new Chicken(x, y, z)
+        animal = new Chicken(x, groundY, z)
+        break
       case AnimalType.RABBIT:
-        return new Rabbit(x, y, z)
+        animal = new Rabbit(x, groundY, z)
+        break
       case AnimalType.WOLF:
-        return new Wolf(x, y, z)
+        animal = new Wolf(x, groundY, z)
+        break
       case AnimalType.FOX:
-        return new Fox(x, y, z)
+        animal = new Fox(x, groundY, z)
+        break
       default:
         return null
     }
+    
+    // Adjust Y position based on animal height
+    // Animal position is at center, so feet are at position.y - height/2
+    // We want feet at groundY, so position.y = groundY + height/2
+    if (animal) {
+      animal.position.y = groundY + animal.height / 2
+    }
+    
+    return animal
   }
 
   /**
