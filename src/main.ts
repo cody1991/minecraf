@@ -1,7 +1,7 @@
 import { Game } from './core/Game'
 import { Player } from './player/Player'
 import { Movement } from './player/Movement'
-import { Camera } from './renderer/Camera'
+import { CameraController } from './renderer/CameraController'
 import { InputManager } from './input/InputManager'
 import { Crosshair } from './ui/Crosshair'
 import { BlockSelector } from './ui/BlockSelector'
@@ -11,12 +11,18 @@ import { VolumeControl } from './ui/VolumeControl'
 import { CoordinateDisplay } from './ui/CoordinateDisplay'
 import { MiniMap } from './ui/MiniMap'
 import { WorldMap } from './ui/WorldMap'
+import { CharacterModelLibrary } from './player/CharacterModelLibrary'
+import { PreferenceManager } from './player/PreferenceManager'
+import { CharacterSelectUI } from './ui/CharacterSelectUI'
+import { initializeModelLibrary } from './models'
+import { ViewMode } from './player/CharacterTypes'
 
 /**
  * WebCraft - Web 版我的世界
  * 入口文件
  * Feature: 002-chunk-terrain-system
  * Feature: 012-sound-map-system - Added audio and map systems
+ * Feature: 013-character-model-view - Added character model and view switching
  */
 
 // Wait for DOM to be ready
@@ -34,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const game = new Game(container, { seed })
 
+  // Initialize model library
+  initializeModelLibrary()
+  const modelLibrary = CharacterModelLibrary.getInstance()
+  const preferenceManager = PreferenceManager.getInstance()
+
   // Get spawn position
   const spawn = game.getWorld().getSpawnPosition()
 
@@ -43,8 +54,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // Register player with game for underwater effect
   game.setPlayer(player)
 
-  // Create camera controller
-  const cameraController = new Camera(game.getCamera(), player)
+  // Create character model from saved preference or default
+  const savedModelId = preferenceManager.getSelectedModelId('default')
+  let characterModel = modelLibrary.createModelInstance(savedModelId)
+  
+  // Add character model to scene
+  game.getRenderer().getScene().add(characterModel.mesh)
+  
+  // Create camera controller with view switching support
+  const cameraController = new CameraController(game.getCamera(), player, game.getWorld())
+  cameraController.setCharacterModel(characterModel)
+
+  // Create character select UI
+  const characterSelectUI = new CharacterSelectUI()
+  characterSelectUI.setModels(modelLibrary.getAvailableModels())
+
+  // Function to change character model
+  const changeCharacterModel = (modelId: string) => {
+    // Remove old model from scene
+    game.getRenderer().getScene().remove(characterModel.mesh)
+    characterModel.dispose()
+    
+    // Create new model
+    characterModel = modelLibrary.createModelInstance(modelId)
+    game.getRenderer().getScene().add(characterModel.mesh)
+    cameraController.setCharacterModel(characterModel)
+    
+    console.log(`[Character] Changed to: ${modelId}`)
+  }
 
   // Create movement controller
   const movement = new Movement(player, game.getWorld())
@@ -167,6 +204,33 @@ document.addEventListener('DOMContentLoaded', () => {
         worldMap.toggle()
       }
 
+      // Handle view toggle (V key)
+      if (input.viewToggle) {
+        cameraController.toggleViewMode()
+      }
+
+      // Handle character select (C key)
+      if (input.characterSelect && !characterSelectUI.isVisible) {
+        // Exit pointer lock and show character select UI
+        inputManager.exitPointerLock()
+        characterSelectUI.show({
+          onConfirm: (modelId: string) => {
+            changeCharacterModel(modelId)
+            // Re-request pointer lock after selection
+            inputManager.requestPointerLock()
+          },
+          onCancel: () => {
+            // Re-request pointer lock on cancel
+            inputManager.requestPointerLock()
+          }
+        })
+      }
+
+      // Handle mouse movement for third-person camera
+      if (cameraController.currentMode === ViewMode.THIRD_PERSON) {
+        cameraController.handleMouseMove(input.mouseX, input.mouseY)
+      }
+
       // Footstep sounds
       const isMoving = input.forward || input.backward || input.left || input.right
       if (isMoving && player.isGrounded && !player.isInWater) {
@@ -217,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update camera to follow player
-    cameraController.update()
+    cameraController.update(deltaTime)
 
     // Update player position for chunk loading
     game.setPlayerPosition(player.position.x, player.position.y, player.position.z)
@@ -235,4 +299,5 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('Left click to destroy, right click to place blocks')
   console.log('Press 1-9, 0 to switch block types (13 blocks available)')
   console.log('Press M to open world map')
+  console.log('Press V to toggle first/third person view')
 })

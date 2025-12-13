@@ -4,6 +4,7 @@ import { MouseInput } from './MouseInput'
 /**
  * Input state interface
  * Feature: 012-sound-map-system - Added mapToggle
+ * Feature: 013-character-model-view - Added viewToggle
  */
 export interface InputState {
   // Movement keys
@@ -35,6 +36,12 @@ export interface InputState {
 
   // M key for map toggle
   mapToggle: boolean
+
+  // V key for view toggle (first/third person)
+  viewToggle: boolean
+
+  // C key for character select
+  characterSelect: boolean
 }
 
 /**
@@ -66,7 +73,9 @@ export class InputManager {
       rightClick: this.mouseInput.wasRightClicked(),
       numberKey: this.keyboardInput.getNumberKeyPressed(),
       tabCycle: this.keyboardInput.wasTabPressed(),
-      mapToggle: this.keyboardInput.wasMapKeyPressed()
+      mapToggle: this.keyboardInput.wasMapKeyPressed(),
+      viewToggle: this.keyboardInput.wasViewTogglePressed(),
+      characterSelect: this.keyboardInput.wasCharacterSelectPressed()
     }
   }
 
@@ -79,6 +88,8 @@ export class InputManager {
     this.keyboardInput.resetNumberKey()
     this.keyboardInput.resetTab()
     this.keyboardInput.resetMapKey()
+    this.keyboardInput.resetViewToggle()
+    this.keyboardInput.resetCharacterSelect()
   }
 
   /**
