@@ -1,6 +1,7 @@
 /**
  * Animal - Base class for all animals
  * Feature: 008-biome-weather-system
+ * Feature: 012-sound-map-system - Added animal sounds
  */
 
 import * as THREE from 'three'
@@ -11,6 +12,7 @@ import { IPhysicsBody, ICollisionWorld } from '../physics/PhysicsTypes'
 import { resolveXCollision, resolveYCollision, resolveZCollision, checkGrounded, checkInWater } from '../physics/Collision'
 import { applyGravity } from '../physics/Gravity'
 import { BlockType } from '../core/Block'
+import { AudioManager } from '../audio/AudioManager'
 
 /** Gravity constant for animals (positive value, applied as downward force) */
 const ANIMAL_GRAVITY = 20
@@ -22,6 +24,10 @@ const WATER_SURFACE_OFFSET = 0.3
 const ANIMAL_JUMP_VELOCITY = 7
 /** Cooldown between jumps (seconds) */
 const JUMP_COOLDOWN = 0.5
+/** Minimum interval between animal sounds (seconds) */
+const MIN_SOUND_INTERVAL = 5
+/** Maximum interval between animal sounds (seconds) */
+const MAX_SOUND_INTERVAL = 20
 
 /**
  * Base class for all animals
@@ -60,6 +66,9 @@ export abstract class Animal extends Entity implements IPhysicsBody {
   /** Jump cooldown timer */
   private jumpCooldown: number = 0
 
+  /** Sound timer for ambient sounds */
+  private soundTimer: number = 0
+
   constructor(type: AnimalType, x: number, y: number, z: number) {
     super(generateEntityId(), x, y, z)
     this.animalType = type
@@ -71,6 +80,9 @@ export abstract class Animal extends Entity implements IPhysicsBody {
     // Random initial rotation
     this.rotation = Math.random() * Math.PI * 2
     this.mesh.rotation.y = this.rotation
+    
+    // Initialize sound timer with random offset
+    this.soundTimer = MIN_SOUND_INTERVAL + Math.random() * (MAX_SOUND_INTERVAL - MIN_SOUND_INTERVAL)
   }
 
   /**
@@ -109,10 +121,48 @@ export abstract class Animal extends Entity implements IPhysicsBody {
 
     // Update animation
     this.updateAnimation(deltaTime)
+    
+    // Update ambient sounds
+    this.updateSound(deltaTime, playerPosition)
 
     // Sync mesh position and rotation
     this.mesh.position.copy(this.position)
     this.mesh.rotation.y = this.rotation
+  }
+  
+  /**
+   * Update ambient sound emission
+   */
+  private updateSound(deltaTime: number, playerPosition: THREE.Vector3): void {
+    this.soundTimer -= deltaTime
+    
+    if (this.soundTimer <= 0) {
+      // Reset timer
+      this.soundTimer = MIN_SOUND_INTERVAL + Math.random() * (MAX_SOUND_INTERVAL - MIN_SOUND_INTERVAL)
+      
+      // Check distance to player
+      const distance = this.position.distanceTo(playerPosition)
+      if (distance > 50) return // Too far to hear
+      
+      // Play animal sound
+      const audioManager = AudioManager.getInstance()
+      const soundName = audioManager.getAnimalSound(String(this.animalType))
+      
+      if (soundName && audioManager.initialized) {
+        audioManager.play3dSfx(
+          soundName,
+          this.position.x,
+          this.position.y,
+          this.position.z,
+          {
+            volume: 0.6,
+            refDistance: 3,
+            maxDistance: 50,
+            rolloffFactor: 1
+          }
+        )
+      }
+    }
   }
 
   /**

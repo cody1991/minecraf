@@ -1,10 +1,12 @@
 /**
  * KeyboardInput - handles keyboard input
+ * Feature: 012-sound-map-system - Added M key for map toggle
  */
 export class KeyboardInput {
   private keysDown: Set<string> = new Set()
   private numberKeyPressed: number | null = null
   private tabPressed: boolean = false
+  private mapKeyPressed: boolean = false
 
   constructor() {
     window.addEventListener('keydown', this.handleKeyDown.bind(this))
@@ -29,6 +31,11 @@ export class KeyboardInput {
     if (event.code === 'Tab') {
       event.preventDefault() // Prevent browser tab switching
       this.tabPressed = true
+    }
+
+    // M key for map toggle
+    if (event.code === 'KeyM') {
+      this.mapKeyPressed = true
     }
   }
 
@@ -73,6 +80,20 @@ export class KeyboardInput {
    */
   resetTab(): void {
     this.tabPressed = false
+  }
+
+  /**
+   * Check if M (map) key was pressed this frame
+   */
+  wasMapKeyPressed(): boolean {
+    return this.mapKeyPressed
+  }
+
+  /**
+   * Reset map key state (call at end of frame)
+   */
+  resetMapKey(): void {
+    this.mapKeyPressed = false
   }
 
   /**

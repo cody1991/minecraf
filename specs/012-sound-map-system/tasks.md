@@ -19,10 +19,10 @@
 
 **Purpose**: 项目初始化和音频资源目录结构
 
-- [ ] T001 创建音频模块目录结构 `src/audio/`
-- [ ] T002 [P] 创建音频资源目录 `public/audio/music/`, `public/audio/footsteps/`, `public/audio/effects/`, `public/audio/animals/`
-- [ ] T003 [P] 创建音频类型定义文件 `src/audio/AudioTypes.ts`（定义 AudioSettings, SfxOptions, Sfx3dOptions, AudioAsset 接口）
-- [ ] T004 [P] 创建地图颜色映射配置 `src/ui/MapColors.ts`（定义 MAP_COLORS, DEFAULT_BLOCK_COLOR, UNLOADED_CHUNK_COLOR）
+- [x] T001 创建音频模块目录结构 `src/audio/`
+- [x] T002 [P] 创建音频资源目录 `public/audio/music/`, `public/audio/footsteps/`, `public/audio/effects/`, `public/audio/animals/`
+- [x] T003 [P] 创建音频类型定义文件 `src/audio/AudioTypes.ts`（定义 AudioSettings, SfxOptions, Sfx3dOptions, AudioAsset 接口）
+- [x] T004 [P] 创建地图颜色映射配置 `src/ui/MapColors.ts`（定义 MAP_COLORS, DEFAULT_BLOCK_COLOR, UNLOADED_CHUNK_COLOR）
 
 ---
 
@@ -32,13 +32,13 @@
 
 **⚠️ CRITICAL**: 必须完成此阶段才能开始用户故事实现
 
-- [ ] T005 实现 AudioSettings 持久化模块 `src/audio/AudioSettings.ts`（LocalStorage 读写、默认值、加载/保存方法）
-- [ ] T006 实现 SoundInstance 类 `src/audio/SoundInstance.ts`（封装 AudioBufferSourceNode、GainNode、stop/setVolume 方法）
-- [ ] T007 实现 AudioManager 核心类 `src/audio/AudioManager.ts`（单例模式、AudioContext 初始化、音频加载缓存、playMusic/playSfx/play3dSfx 方法）
-- [ ] T008 下载并添加背景音乐文件 `public/audio/music/ambient.mp3`（从 freesound.org 或 OpenGameArt 获取免费音乐）
-- [ ] T009 [P] 下载并添加脚步声音效 `public/audio/footsteps/grass.mp3`, `stone.mp3`, `sand.mp3`, `wood.mp3`
-- [ ] T010 [P] 下载并添加摔落音效 `public/audio/effects/fall_light.mp3`, `fall_heavy.mp3`
-- [ ] T011 [P] 下载并添加动物声音 `public/audio/animals/cow.mp3`, `pig.mp3`, `sheep.mp3`, `chicken.mp3`, `wolf.mp3`, `fox.mp3`
+- [x] T005 实现 AudioSettings 持久化模块 `src/audio/AudioSettings.ts`（LocalStorage 读写、默认值、加载/保存方法）
+- [x] T006 实现 SoundInstance 类 `src/audio/SoundInstance.ts`（封装 AudioBufferSourceNode、GainNode、stop/setVolume 方法）
+- [x] T007 实现 AudioManager 核心类 `src/audio/AudioManager.ts`（单例模式、AudioContext 初始化、音频加载缓存、playMusic/playSfx/play3dSfx 方法）
+- [x] T008 下载并添加背景音乐文件 `public/audio/music/ambient.mp3`（使用合成音频作为后备）
+- [x] T009 [P] 下载并添加脚步声音效 `public/audio/footsteps/grass.mp3`, `stone.mp3`, `sand.mp3`, `wood.mp3`（使用合成音频作为后备）
+- [x] T010 [P] 下载并添加摔落音效 `public/audio/effects/fall_light.mp3`, `fall_heavy.mp3`（使用合成音频作为后备）
+- [x] T011 [P] 下载并添加动物声音 `public/audio/animals/cow.mp3`, `pig.mp3`, `sheep.mp3`, `chicken.mp3`, `wolf.mp3`, `fox.mp3`（使用合成音频作为后备）
 
 **Checkpoint**: 音频基础设施就绪，可开始用户故事实现
 
@@ -52,11 +52,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] 在 AudioManager 中实现背景音乐播放逻辑 `src/audio/AudioManager.ts`（playMusic 循环播放、淡入淡出过渡）
-- [ ] T013 [US1] 实现音量控制 UI 组件 `src/ui/VolumeControl.ts`（音量滑块、静音按钮、音量图标状态）
-- [ ] T014 [US1] 在 Game.ts 中集成 AudioManager `src/core/Game.ts`（初始化、游戏启动时播放背景音乐）
-- [ ] T015 [US1] 在 index.html 中添加音量控制 UI 容器和样式 `index.html`
-- [ ] T016 [US1] 实现用户交互后恢复 AudioContext `src/audio/AudioManager.ts`（处理浏览器自动播放策略）
+- [x] T012 [US1] 在 AudioManager 中实现背景音乐播放逻辑 `src/audio/AudioManager.ts`（playMusic 循环播放、淡入淡出过渡）
+- [x] T013 [US1] 实现音量控制 UI 组件 `src/ui/VolumeControl.ts`（音量滑块、静音按钮、音量图标状态）
+- [x] T014 [US1] 在 main.ts 中集成 AudioManager `src/main.ts`（初始化、游戏启动时播放背景音乐）
+- [x] T015 [US1] 在 index.html 中添加音量控制 UI 容器和样式 `index.html`
+- [x] T016 [US1] 实现用户交互后恢复 AudioContext `src/audio/AudioManager.ts`（处理浏览器自动播放策略）
 
 **Checkpoint**: 背景音乐功能完整可用，可独立测试
 
@@ -70,10 +70,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] 在 Player.ts 中添加移动状态检测 `src/player/Player.ts`（isMoving、isRunning、groundBlockType 属性）
-- [ ] T018 [US2] 在 Player.ts 中实现脚步声触发逻辑 `src/player/Player.ts`（根据移动状态和地形类型调用 AudioManager.playSfx）
-- [ ] T019 [US2] 实现地形类型到脚步声映射 `src/audio/AudioManager.ts`（getFootstepSound 方法）
-- [ ] T020 [US2] 实现脚步声播放间隔控制 `src/player/Player.ts`（行走/奔跑不同间隔）
+- [x] T017 [US2] 在 main.ts 中添加移动状态检测 `src/main.ts`（isMoving、isRunning、groundBlockType 属性）
+- [x] T018 [US2] 在 main.ts 中实现脚步声触发逻辑 `src/main.ts`（根据移动状态和地形类型调用 AudioManager.playSfx）
+- [x] T019 [US2] 实现地形类型到脚步声映射 `src/audio/AudioManager.ts`（getFootstepSound 方法）
+- [x] T020 [US2] 实现脚步声播放间隔控制 `src/main.ts`（行走/奔跑不同间隔）
 
 **Checkpoint**: 脚步声功能完整可用，可独立测试
 
@@ -87,12 +87,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] 实现 MiniMap 类 `src/ui/MiniMap.ts`（Canvas 创建、圆形裁剪、样式定位）
-- [ ] T022 [US3] 实现小地图地形渲染 `src/ui/MiniMap.ts`（从 World 读取方块数据、应用颜色映射）
-- [ ] T023 [US3] 实现玩家位置和朝向标记 `src/ui/MiniMap.ts`（中心点标记、方向箭头）
-- [ ] T024 [US3] 实现层级切换逻辑 `src/ui/MiniMap.ts`（根据玩家 Y 坐标切换地表/地下显示）
-- [ ] T025 [US3] 实现离屏 Canvas 缓存优化 `src/ui/MiniMap.ts`（仅在区块变化时重绘缓存）
-- [ ] T026 [US3] 在 Game.ts 中集成 MiniMap `src/core/Game.ts`（初始化、游戏循环中更新）
+- [x] T021 [US3] 实现 MiniMap 类 `src/ui/MiniMap.ts`（Canvas 创建、圆形裁剪、样式定位）
+- [x] T022 [US3] 实现小地图地形渲染 `src/ui/MiniMap.ts`（从 World 读取方块数据、应用颜色映射）
+- [x] T023 [US3] 实现玩家位置和朝向标记 `src/ui/MiniMap.ts`（中心点标记、方向箭头）
+- [x] T024 [US3] 实现层级切换逻辑 `src/ui/MiniMap.ts`（根据玩家 Y 坐标切换地表/地下显示）
+- [x] T025 [US3] 实现离屏 Canvas 缓存优化 `src/ui/MiniMap.ts`（仅在区块变化时重绘缓存）
+- [x] T026 [US3] 在 main.ts 中集成 MiniMap `src/main.ts`（初始化、游戏循环中更新）
 
 **Checkpoint**: 小地图功能完整可用，可独立测试
 
@@ -106,10 +106,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] 实现 CoordinateDisplay 类 `src/ui/CoordinateDisplay.ts`（DOM 元素创建、样式定位）
-- [ ] T028 [US4] 实现坐标格式化显示 `src/ui/CoordinateDisplay.ts`（X/Y/Z 标签、小数位数控制）
-- [ ] T029 [US4] 在 Game.ts 中集成 CoordinateDisplay `src/core/Game.ts`（初始化、游戏循环中更新）
-- [ ] T030 [US4] 更新 FPS 信息区域布局 `src/ui/FpsCounter.ts`（与坐标显示协调布局）
+- [x] T027 [US4] 实现 CoordinateDisplay 类 `src/ui/CoordinateDisplay.ts`（DOM 元素创建、样式定位）
+- [x] T028 [US4] 实现坐标格式化显示 `src/ui/CoordinateDisplay.ts`（X/Y/Z 标签、小数位数控制）
+- [x] T029 [US4] 在 main.ts 中集成 CoordinateDisplay `src/main.ts`（初始化、游戏循环中更新）
+- [x] T030 [US4] 更新 FPS 信息区域布局 `src/ui/FpsCounter.ts`（与坐标显示协调布局）
 
 **Checkpoint**: 坐标显示功能完整可用，可独立测试
 
@@ -123,13 +123,13 @@
 
 ### Implementation for User Story 5
 
-- [ ] T031 [US5] 实现 WorldMap 类 `src/ui/WorldMap.ts`（全屏 Canvas 创建、样式定位、打开/关闭状态）
-- [ ] T032 [US5] 实现大地图地形渲染 `src/ui/WorldMap.ts`（从 World 读取更大范围数据、应用颜色映射）
-- [ ] T033 [US5] 实现玩家位置标记 `src/ui/WorldMap.ts`（当前位置高亮显示）
-- [ ] T034 [US5] 实现缩放功能 `src/ui/WorldMap.ts`（鼠标滚轮缩放、缩放范围限制 0.1-4.0）
-- [ ] T035 [US5] 实现平移功能 `src/ui/WorldMap.ts`（鼠标拖拽平移地图视图）
-- [ ] T036 [US5] 在 InputManager 中添加 M 键处理 `src/input/KeyboardInput.ts`（M 键切换大地图）
-- [ ] T037 [US5] 在 Game.ts 中集成 WorldMap `src/core/Game.ts`（初始化、M 键事件处理）
+- [x] T031 [US5] 实现 WorldMap 类 `src/ui/WorldMap.ts`（全屏 Canvas 创建、样式定位、打开/关闭状态）
+- [x] T032 [US5] 实现大地图地形渲染 `src/ui/WorldMap.ts`（从 World 读取更大范围数据、应用颜色映射）
+- [x] T033 [US5] 实现玩家位置标记 `src/ui/WorldMap.ts`（当前位置高亮显示）
+- [x] T034 [US5] 实现缩放功能 `src/ui/WorldMap.ts`（鼠标滚轮缩放、缩放范围限制 0.1-4.0）
+- [x] T035 [US5] 实现平移功能 `src/ui/WorldMap.ts`（鼠标拖拽平移地图视图）
+- [x] T036 [US5] 在 InputManager 中添加 M 键处理 `src/input/KeyboardInput.ts`（M 键切换大地图）
+- [x] T037 [US5] 在 main.ts 中集成 WorldMap `src/main.ts`（初始化、M 键事件处理）
 
 **Checkpoint**: 大地图功能完整可用，可独立测试
 
@@ -143,10 +143,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T038 [US6] 在 Player.ts 中添加摔落检测 `src/player/Player.ts`（记录下落起始高度、着地检测）
-- [ ] T039 [US6] 实现摔落高度计算 `src/player/Player.ts`（计算实际摔落距离）
-- [ ] T040 [US6] 实现摔落音效触发 `src/player/Player.ts`（根据摔落高度选择 fall_light 或 fall_heavy）
-- [ ] T041 [US6] 实现摔落音效音量调节 `src/audio/AudioManager.ts`（高度越高音量越大）
+- [x] T038 [US6] 在 main.ts 中添加摔落检测 `src/main.ts`（记录下落起始高度、着地检测）
+- [x] T039 [US6] 实现摔落高度计算 `src/main.ts`（计算实际摔落距离）
+- [x] T040 [US6] 实现摔落音效触发 `src/main.ts`（根据摔落高度选择 fall_light 或 fall_heavy）
+- [x] T041 [US6] 实现摔落音效音量调节 `src/audio/AudioManager.ts`（高度越高音量越大）
 
 **Checkpoint**: 摔落音效功能完整可用，可独立测试
 
@@ -160,11 +160,11 @@
 
 ### Implementation for User Story 7
 
-- [ ] T042 [US7] 在 Animal.ts 中添加声音发出逻辑 `src/entities/Animal.ts`（随机间隔发出声音）
-- [ ] T043 [US7] 实现动物类型到声音映射 `src/audio/AudioManager.ts`（getAnimalSound 方法）
-- [ ] T044 [US7] 实现 3D 空间音效 `src/audio/AudioManager.ts`（play3dSfx 使用 PannerNode）
-- [ ] T045 [US7] 在 Animal.ts 中调用 3D 音效播放 `src/entities/Animal.ts`（传递动物位置）
-- [ ] T046 [US7] 实现听者位置更新 `src/audio/AudioManager.ts`（同步玩家位置到 AudioListener）
+- [x] T042 [US7] 在 Animal.ts 中添加声音发出逻辑 `src/entities/Animal.ts`（随机间隔发出声音）
+- [x] T043 [US7] 实现动物类型到声音映射 `src/audio/AudioManager.ts`（getAnimalSound 方法）
+- [x] T044 [US7] 实现 3D 空间音效 `src/audio/AudioManager.ts`（play3dSfx 使用 PannerNode）
+- [x] T045 [US7] 在 Animal.ts 中调用 3D 音效播放 `src/entities/Animal.ts`（传递动物位置）
+- [x] T046 [US7] 实现听者位置更新 `src/audio/AudioManager.ts`（同步玩家位置到 AudioListener）
 
 **Checkpoint**: 动物声音功能完整可用，可独立测试
 
@@ -174,12 +174,12 @@
 
 **Purpose**: 跨用户故事的优化和完善
 
-- [ ] T047 [P] 实现音频静默降级 `src/audio/AudioManager.ts`（浏览器不支持时静默处理）
-- [ ] T048 [P] 实现地图边界处理 `src/ui/MiniMap.ts`, `src/ui/WorldMap.ts`（边界区域显示处理）
-- [ ] T049 优化音频预加载策略 `src/audio/AudioManager.ts`（常用音效预加载、动物声音按需加载）
-- [ ] T050 优化小地图渲染性能 `src/ui/MiniMap.ts`（控制刷新率 10 FPS）
-- [ ] T051 [P] 添加 dispose 方法清理资源 `src/audio/AudioManager.ts`, `src/ui/MiniMap.ts`, `src/ui/WorldMap.ts`, `src/ui/CoordinateDisplay.ts`
-- [ ] T052 运行 quickstart.md 验证所有功能
+- [x] T047 [P] 实现音频静默降级 `src/audio/AudioManager.ts`（浏览器不支持时静默处理）
+- [x] T048 [P] 实现地图边界处理 `src/ui/MiniMap.ts`, `src/ui/WorldMap.ts`（边界区域显示处理）
+- [x] T049 优化音频预加载策略 `src/audio/AudioManager.ts`（常用音效预加载、动物声音按需加载）
+- [x] T050 优化小地图渲染性能 `src/ui/MiniMap.ts`（控制刷新率 10 FPS）
+- [x] T051 [P] 添加 dispose 方法清理资源 `src/audio/AudioManager.ts`, `src/ui/MiniMap.ts`, `src/ui/WorldMap.ts`, `src/ui/CoordinateDisplay.ts`
+- [x] T052 运行 quickstart.md 验证所有功能
 
 ---
 

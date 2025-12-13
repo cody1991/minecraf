@@ -3,6 +3,7 @@ import { MouseInput } from './MouseInput'
 
 /**
  * Input state interface
+ * Feature: 012-sound-map-system - Added mapToggle
  */
 export interface InputState {
   // Movement keys
@@ -31,6 +32,9 @@ export interface InputState {
 
   // Tab key for cycling to next block
   tabCycle: boolean
+
+  // M key for map toggle
+  mapToggle: boolean
 }
 
 /**
@@ -61,7 +65,8 @@ export class InputManager {
       leftClick: this.mouseInput.wasLeftClicked(),
       rightClick: this.mouseInput.wasRightClicked(),
       numberKey: this.keyboardInput.getNumberKeyPressed(),
-      tabCycle: this.keyboardInput.wasTabPressed()
+      tabCycle: this.keyboardInput.wasTabPressed(),
+      mapToggle: this.keyboardInput.wasMapKeyPressed()
     }
   }
 
@@ -73,6 +78,7 @@ export class InputManager {
     this.mouseInput.resetClicks()
     this.keyboardInput.resetNumberKey()
     this.keyboardInput.resetTab()
+    this.keyboardInput.resetMapKey()
   }
 
   /**
