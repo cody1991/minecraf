@@ -4,11 +4,13 @@ import { BlockType, isSolid } from '../core/Block'
 import { Player } from './Player'
 import { Raycaster, INTERACTION_DISTANCE } from '../utils/Raycaster'
 import { AudioManager } from '../audio/AudioManager'
+import { ItemEntity } from '../entities/ItemEntity'
 
 /**
  * BlockInteraction - handles block placement and destruction
  * Always uses player's eye position and look direction for consistent behavior
  * Updated: 017-block-sound-effects - Added block sound effects
+ * Updated: 019-inventory-system - Added item drop on block break
  */
 export class BlockInteraction {
   private world: World
@@ -17,6 +19,9 @@ export class BlockInteraction {
 
   // Callback when world changes
   private onWorldChange: (() => void) | null = null
+  
+  // Callback when item entity is created (Feature: 019-inventory-system)
+  private onItemDrop: ((item: ItemEntity) => void) | null = null
 
   constructor(world: World, player: Player, _camera: THREE.Camera) {
     this.world = world
@@ -29,6 +34,13 @@ export class BlockInteraction {
    */
   setOnWorldChange(callback: () => void): void {
     this.onWorldChange = callback
+  }
+
+  /**
+   * Set callback for item drops (Feature: 019-inventory-system)
+   */
+  setOnItemDrop(callback: (item: ItemEntity) => void): void {
+    this.onItemDrop = callback
   }
 
   /**
@@ -57,6 +69,18 @@ export class BlockInteraction {
         hit.blockZ + 0.5
       )
 
+      // Create dropped item entity (Feature: 019-inventory-system)
+      if (blockType !== BlockType.AIR && this.onItemDrop) {
+        const itemEntity = new ItemEntity(
+          hit.blockX + 0.5,
+          hit.blockY + 0.5,
+          hit.blockZ + 0.5,
+          blockType,
+          1
+        )
+        this.onItemDrop(itemEntity)
+      }
+
       if (this.onWorldChange) {
         this.onWorldChange()
       }
@@ -67,6 +91,7 @@ export class BlockInteraction {
 
   /**
    * Try to place a block where the player is looking
+   * Feature: 019-inventory-system - Uses item from inventory instead of selectedBlockType
    */
   placeBlock(): boolean {
     const hit = this.getTargetBlock()
@@ -93,8 +118,14 @@ export class BlockInteraction {
       return false
     }
 
-    // Get the block type being placed
-    const blockType = this.player.selectedBlockType
+    // Get the block type from inventory (Feature: 019-inventory-system)
+    const selectedItem = this.player.inventory.getSelectedItem()
+    if (!selectedItem.itemType || selectedItem.count <= 0) {
+      // No item in selected slot, fall back to legacy behavior
+      return false
+    }
+    
+    const blockType = selectedItem.itemType
 
     // Place the block
     const success = this.world.setBlock(
@@ -105,6 +136,9 @@ export class BlockInteraction {
     )
 
     if (success) {
+      // Remove one item from inventory
+      this.player.inventory.removeItem(this.player.inventory.selectedSlot, 1)
+      
       // Play block place sound at the placed block's position
       AudioManager.getInstance().playBlockSound(
         blockType,

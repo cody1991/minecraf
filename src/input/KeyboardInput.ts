@@ -3,6 +3,7 @@
  * Feature: 012-sound-map-system - Added M key for map toggle
  * Feature: 013-character-model-view - Added V key for view toggle
  * Feature: 018-world-save-system - Added Escape key for save panel
+ * Feature: 019-inventory-system - Added E key for inventory toggle
  */
 export class KeyboardInput {
   private keysDown: Set<string> = new Set()
@@ -12,6 +13,7 @@ export class KeyboardInput {
   private viewTogglePressed: boolean = false
   private characterSelectPressed: boolean = false
   private escapePressed: boolean = false
+  private inventoryTogglePressed: boolean = false
 
   constructor() {
     window.addEventListener('keydown', this.handleKeyDown.bind(this))
@@ -56,6 +58,11 @@ export class KeyboardInput {
     // Escape key for save panel
     if (event.code === 'Escape') {
       this.escapePressed = true
+    }
+
+    // E key for inventory toggle (Feature: 019-inventory-system)
+    if (event.code === 'KeyE') {
+      this.inventoryTogglePressed = true
     }
   }
 
@@ -156,6 +163,21 @@ export class KeyboardInput {
    */
   resetEscape(): void {
     this.escapePressed = false
+  }
+
+  /**
+   * Check if E (inventory toggle) key was pressed this frame
+   * Feature: 019-inventory-system
+   */
+  wasInventoryTogglePressed(): boolean {
+    return this.inventoryTogglePressed
+  }
+
+  /**
+   * Reset inventory toggle key state (call at end of frame)
+   */
+  resetInventoryToggle(): void {
+    this.inventoryTogglePressed = false
   }
 
   /**

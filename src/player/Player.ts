@@ -1,10 +1,13 @@
 /**
  * Player class - represents the player entity
  * Feature: 005-block-textures - Extended block selection support
+ * Feature: 019-inventory-system - Added inventory support
  */
 
 import * as THREE from 'three'
 import { BlockType, PLACEABLE_BLOCKS } from '../core/Block'
+import { Inventory } from './Inventory'
+import { InventoryState } from './InventoryConstants'
 
 /**
  * Player constants
@@ -51,10 +54,14 @@ export class Player {
   // Currently selected block type for placing
   public selectedBlockType: BlockType = BlockType.GRASS
 
+  // Inventory system (Feature: 019-inventory-system)
+  public readonly inventory: Inventory
+
   constructor(x: number, y: number, z: number) {
     this.position = new THREE.Vector3(x, y, z)
     this.velocity = new THREE.Vector3(0, 0, 0)
     this.rotation = new THREE.Euler(0, 0, 0, 'YXZ') // Yaw-Pitch-Roll order
+    this.inventory = new Inventory()
   }
 
   /**
@@ -183,6 +190,7 @@ export class Player {
     position: { x: number; y: number; z: number }
     rotation: { yaw: number; pitch: number }
     selectedBlockIndex?: number
+    inventory?: InventoryState
   } {
     return {
       position: {
@@ -195,6 +203,7 @@ export class Player {
         pitch: this.rotation.x,
       },
       selectedBlockIndex: this.getSelectedBlockIndex(),
+      inventory: this.inventory.serialize(),
     }
   }
 
@@ -205,6 +214,7 @@ export class Player {
     position: { x: number; y: number; z: number }
     rotation: { yaw: number; pitch: number }
     selectedBlockIndex?: number
+    inventory?: InventoryState
   }): void {
     // Restore position
     this.position.set(state.position.x, state.position.y, state.position.z)
@@ -216,6 +226,11 @@ export class Player {
     // Restore selected block
     if (state.selectedBlockIndex !== undefined) {
       this.setSelectedBlockIndex(state.selectedBlockIndex)
+    }
+    
+    // Restore inventory (Feature: 019-inventory-system)
+    if (state.inventory) {
+      this.inventory.deserialize(state.inventory)
     }
     
     // Reset velocity

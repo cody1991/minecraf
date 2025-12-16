@@ -4,7 +4,8 @@ import { Movement } from './player/Movement'
 import { CameraController } from './renderer/CameraController'
 import { InputManager } from './input/InputManager'
 import { Crosshair } from './ui/Crosshair'
-import { BlockSelector } from './ui/BlockSelector'
+import { HotbarUI } from './ui/HotbarUI'
+import { InventoryUI } from './ui/InventoryUI'
 import { TargetIndicator } from './ui/TargetIndicator'
 import { BlockInteraction } from './player/BlockInteraction'
 import { AudioManager } from './audio/AudioManager'
@@ -28,6 +29,7 @@ import { AutoSave } from './storage/AutoSave'
  * Feature: 012-sound-map-system - Added audio and map systems
  * Feature: 013-character-model-view - Added character model and view switching
  * Feature: 018-world-save-system - Added save/load functionality
+ * Feature: 019-inventory-system - Added inventory and hotbar
  */
 
 // Wait for DOM to be ready
@@ -101,9 +103,26 @@ document.addEventListener('DOMContentLoaded', () => {
     game.getCamera()
   )
 
+  // Connect item drop callback (Feature: 019-inventory-system)
+  blockInteraction.setOnItemDrop((item) => {
+    game.addItemEntity(item)
+  })
+
   // Create UI components
   const crosshair = new Crosshair()
-  const blockSelector = new BlockSelector()
+  
+  // Create hotbar UI (Feature: 019-inventory-system)
+  const hotbarUI = new HotbarUI()
+  hotbarUI.setInventory(player.inventory)
+  
+  // Create inventory UI (Feature: 019-inventory-system)
+  const inventoryUI = new InventoryUI()
+  inventoryUI.setOnOpen(() => {
+    inputManager.exitPointerLock()
+  })
+  inventoryUI.setOnClose(() => {
+    inputManager.requestPointerLock()
+  })
   
   // Create 3D target indicator for third-person view
   const targetIndicator = new TargetIndicator(
@@ -292,23 +311,20 @@ document.addEventListener('DOMContentLoaded', () => {
     )
 
     // Only process input when pointer is locked and world map is closed
-    if (inputManager.isPointerLocked() && !worldMap.opened) {
+    if (inputManager.isPointerLocked() && !worldMap.opened && !inventoryUI.isOpen) {
       const input = inputManager.getState()
 
       // Update player movement
       movement.update(input, deltaTime)
 
-      // Handle block type selection (1-9, 0 keys)
-      if (input.numberKey !== null) {
-        if (player.setSelectedBlockIndex(input.numberKey)) {
-          blockSelector.updateSelection(player.selectedBlockType)
-        }
+      // Handle hotbar slot selection (1-9 keys) - Feature: 019-inventory-system
+      if (input.numberKey !== null && input.numberKey < 9) {
+        hotbarUI.selectSlot(input.numberKey)
       }
 
-      // Handle Tab key to cycle to next block
+      // Handle Tab key to cycle to next hotbar slot
       if (input.tabCycle) {
-        player.selectNextBlock()
-        blockSelector.updateSelection(player.selectedBlockType)
+        hotbarUI.selectNext()
       }
 
       // Handle block destruction (left click)
@@ -319,6 +335,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Handle block placement (right click)
       if (input.rightClick) {
         blockInteraction.placeBlock()
+      }
+
+      // Handle inventory toggle (E key) - Feature: 019-inventory-system
+      if (input.inventoryToggle) {
+        inventoryUI.open(player.inventory)
       }
 
       // Handle map toggle (M key)
@@ -436,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('World seed:', game.getWorld().seed)
   console.log('Click to start, WASD to move, mouse to look around')
   console.log('Left click to destroy, right click to place blocks')
-  console.log('Press 1-9, 0 to switch block types (13 blocks available)')
+  console.log('Press 1-9 to switch hotbar slots, E to open inventory')
   console.log('Press M to open world map')
   console.log('Press V to toggle first/third person view')
 })

@@ -3,6 +3,7 @@
  * Feature: 002-chunk-terrain-system
  * Feature: 007-underwater-display - Added underwater effect support
  * Feature: 008-biome-weather-system - Added TimeSystem and EntityManager
+ * Feature: 019-inventory-system - Added item entity management
  * 
  * Manages the game loop, world, and rendering with chunk-based architecture.
  */
@@ -21,6 +22,9 @@ import { FishSpawner } from '../entities/FishSpawner'
 import { SkyRenderer } from '../weather/SkyRenderer'
 import { WeatherSystem } from '../weather/WeatherSystem'
 import { RainEffect } from '../weather/RainEffect'
+import { ItemEntity } from '../entities/ItemEntity'
+import { AudioManager } from '../audio/AudioManager'
+import { MAX_ITEM_ENTITIES } from '../player/InventoryConstants'
 
 /**
  * Main Game class - manages game loop and core systems
@@ -51,6 +55,9 @@ export class Game {
 
   // Player reference for underwater effect
   private player: Player | null = null
+
+  // Item entities (Feature: 019-inventory-system)
+  private itemEntities: Map<string, ItemEntity> = new Map()
 
   // Callbacks for external systems
   private updateCallback: ((deltaTime: number) => void) | null = null
@@ -227,6 +234,9 @@ export class Game {
     // Update entities with collision world
     this.entityManager.update(deltaTime, this.playerPosition, this.world)
 
+    // Update item entities and check for pickup (Feature: 019-inventory-system)
+    this.updateItemEntities(deltaTime)
+
     // Update sky renderer
     this.skyRenderer.update(this.timeSystem, this.camera.position)
 
@@ -367,12 +377,124 @@ export class Game {
     return this.currentFps
   }
 
+  // ============================================================================
+  // Item Entity Management (Feature: 019-inventory-system)
+  // ============================================================================
+
+  /**
+   * Add an item entity to the world
+   */
+  addItemEntity(item: ItemEntity): boolean {
+    // Check limit
+    if (this.itemEntities.size >= MAX_ITEM_ENTITIES) {
+      // Remove oldest item entity
+      const oldestId = this.itemEntities.keys().next().value
+      if (oldestId) {
+        this.removeItemEntity(oldestId)
+      }
+    }
+
+    this.itemEntities.set(item.id, item)
+    
+    // Add mesh to scene
+    const mesh = item.getMesh()
+    if (mesh) {
+      this.renderer.getScene().add(mesh)
+    }
+
+    return true
+  }
+
+  /**
+   * Remove an item entity from the world
+   */
+  removeItemEntity(itemId: string): boolean {
+    const item = this.itemEntities.get(itemId)
+    if (!item) return false
+
+    // Remove mesh from scene
+    const mesh = item.getMesh()
+    if (mesh) {
+      this.renderer.getScene().remove(mesh)
+    }
+
+    // Dispose item
+    item.dispose()
+    this.itemEntities.delete(itemId)
+
+    return true
+  }
+
+  /**
+   * Update all item entities and check for pickup
+   */
+  private updateItemEntities(deltaTime: number): void {
+    if (!this.player) return
+
+    const playerPos = this.playerPosition
+    const itemsToRemove: string[] = []
+    const itemsToPickup: ItemEntity[] = []
+
+    // Update each item entity
+    for (const [id, item] of this.itemEntities) {
+      item.update(deltaTime, playerPos, this.world)
+
+      // Check if should be destroyed
+      if (item.shouldDestroy()) {
+        itemsToRemove.push(id)
+        
+        // Check if item was picked up (close to player)
+        const distance = item.position.distanceTo(playerPos)
+        if (distance < 0.5) {
+          itemsToPickup.push(item)
+        }
+      }
+    }
+
+    // Process pickups
+    for (const item of itemsToPickup) {
+      const added = this.player.inventory.addItem(item.itemType, item.count)
+      
+      if (added > 0) {
+        // Play pickup sound
+        AudioManager.getInstance().playPickupSound(
+          item.position.x,
+          item.position.y,
+          item.position.z
+        )
+      }
+    }
+
+    // Remove destroyed items
+    for (const id of itemsToRemove) {
+      this.removeItemEntity(id)
+    }
+  }
+
+  /**
+   * Get item entity count
+   */
+  getItemEntityCount(): number {
+    return this.itemEntities.size
+  }
+
   /**
    * Dispose of game resources
    */
   dispose(): void {
     this.stop()
     window.removeEventListener('resize', this.handleResize.bind(this))
+    
+    // Dispose item entities (Feature: 019-inventory-system)
+    for (const [, item] of this.itemEntities) {
+      const mesh = item.getMesh()
+      if (mesh) {
+        this.renderer.getScene().remove(mesh)
+      }
+      item.dispose()
+    }
+    this.itemEntities.clear()
+    
     this.rainEffect.dispose()
     this.skyRenderer.dispose()
     this.entityManager.dispose()

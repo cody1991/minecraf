@@ -10,6 +10,24 @@
 // ============================================================================
 
 /**
+ * Serialized item slot for save data
+ * Feature: 019-inventory-system
+ */
+export interface ItemSlotSerialized {
+  itemType: number | null
+  count: number
+}
+
+/**
+ * Inventory state for save data
+ * Feature: 019-inventory-system
+ */
+export interface InventoryState {
+  slots: ItemSlotSerialized[]
+  selectedSlot: number
+}
+
+/**
  * Player state to be saved
  */
 export interface PlayerState {
@@ -17,6 +35,8 @@ export interface PlayerState {
   rotation: { yaw: number; pitch: number }
   selectedBlockIndex?: number
   characterModel?: string
+  /** Inventory state - Feature: 019-inventory-system */
+  inventory?: InventoryState
 }
 
 /**

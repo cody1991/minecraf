@@ -248,6 +248,47 @@ export function generateFallSound(
 }
 
 /**
+ * Generate item pickup sound
+ * Feature: 019-inventory-system
+ * 
+ * Creates a short, rising "pop" sound similar to Minecraft's pickup sound.
+ * Frequency sweeps from 800Hz to 1200Hz over 0.1 seconds.
+ */
+export function generatePickupSound(audioContext: AudioContext): AudioBuffer {
+  const sampleRate = audioContext.sampleRate
+  const duration = 0.1
+  const length = Math.floor(sampleRate * duration)
+  const buffer = audioContext.createBuffer(1, length, sampleRate)
+  const data = buffer.getChannelData(0)
+
+  const startFreq = 800
+  const endFreq = 1200
+
+  for (let i = 0; i < length; i++) {
+    const t = i / sampleRate
+    const progress = t / duration
+    
+    // Frequency sweep from start to end
+    const freq = startFreq + (endFreq - startFreq) * progress
+    
+    // Main tone
+    let sample = Math.sin(2 * Math.PI * freq * t)
+    
+    // Add a harmonic for brightness
+    sample += Math.sin(2 * Math.PI * freq * 2 * t) * 0.3
+    
+    // Quick attack, exponential decay
+    const attack = 0.01
+    const attackEnv = t < attack ? t / attack : 1
+    const decayEnv = Math.exp(-t * 30)
+    
+    data[i] = sample * attackEnv * decayEnv * 0.5
+  }
+
+  return buffer
+}
+
+/**
  * Generate animal sound
  */
 export function generateAnimalSound(

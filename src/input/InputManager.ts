@@ -6,6 +6,7 @@ import { MouseInput } from './MouseInput'
  * Feature: 012-sound-map-system - Added mapToggle
  * Feature: 013-character-model-view - Added viewToggle
  * Feature: 018-world-save-system - Added escapeMenu
+ * Feature: 019-inventory-system - Added inventoryToggle
  */
 export interface InputState {
   // Movement keys
@@ -46,6 +47,9 @@ export interface InputState {
 
   // Escape key for menu/save panel
   escapeMenu: boolean
+
+  // E key for inventory toggle (Feature: 019-inventory-system)
+  inventoryToggle: boolean
 }
 
 /**
@@ -80,7 +84,8 @@ export class InputManager {
       mapToggle: this.keyboardInput.wasMapKeyPressed(),
       viewToggle: this.keyboardInput.wasViewTogglePressed(),
       characterSelect: this.keyboardInput.wasCharacterSelectPressed(),
-      escapeMenu: this.keyboardInput.wasEscapePressed()
+      escapeMenu: this.keyboardInput.wasEscapePressed(),
+      inventoryToggle: this.keyboardInput.wasInventoryTogglePressed()
     }
   }
 
@@ -96,6 +101,7 @@ export class InputManager {
     this.keyboardInput.resetViewToggle()
     this.keyboardInput.resetCharacterSelect()
     this.keyboardInput.resetEscape()
+    this.keyboardInput.resetInventoryToggle()
   }
 
   /**

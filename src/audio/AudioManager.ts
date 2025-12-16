@@ -14,7 +14,8 @@ import {
   generateFootstep, 
   generateFallSound, 
   generateAnimalSound,
-  generateBlockSound
+  generateBlockSound,
+  generatePickupSound
 } from './SynthAudio'
 
 /** Fade duration for music transitions (seconds) */
@@ -497,6 +498,67 @@ export class AudioManager {
     }
 
     console.log(`[AudioManager] Playing block sound: ${category} ${action}`)
+  }
+
+  /**
+   * Play item pickup sound
+   * Feature: 019-inventory-system
+   * 
+   * @param x Optional X position for 3D audio
+   * @param y Optional Y position for 3D audio
+   * @param z Optional Z position for 3D audio
+   */
+  playPickupSound(x?: number, y?: number, z?: number): void {
+    if (!this.audioContext || !this.sfxGain) return
+    if (this.settings.muted) return
+
+    // Get or generate the pickup sound buffer
+    const cacheKey = 'pickup_sound'
+    let buffer = this.blockSoundCache.get(cacheKey)
+    
+    if (!buffer) {
+      buffer = generatePickupSound(this.audioContext)
+      this.blockSoundCache.set(cacheKey, buffer)
+    }
+
+    // Create audio nodes
+    const source = this.audioContext.createBufferSource()
+    source.buffer = buffer
+
+    // Add slight random pitch variation for variety
+    source.playbackRate.value = 0.9 + Math.random() * 0.2
+
+    const gainNode = this.audioContext.createGain()
+    gainNode.gain.value = 0.8
+
+    // Use 3D positioning if coordinates provided
+    if (x !== undefined && y !== undefined && z !== undefined) {
+      const panner = this.audioContext.createPanner()
+      panner.distanceModel = 'inverse'
+      panner.refDistance = 1
+      panner.maxDistance = 30
+      panner.rolloffFactor = 1
+      panner.positionX.value = x
+      panner.positionY.value = y
+      panner.positionZ.value = z
+
+      source.connect(panner)
+      panner.connect(gainNode)
+    } else {
+      source.connect(gainNode)
+    }
+
+    gainNode.connect(this.sfxGain)
+    source.start()
+
+    // Track active sound
+    const instance = new SoundInstance(source, gainNode)
+    const id = `pickup_${this.soundIdCounter++}`
+    this.activeSounds.set(id, instance)
+
+    source.onended = () => {
+      this.activeSounds.delete(id)
+    }
   }
 
   /**
