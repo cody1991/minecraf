@@ -719,6 +719,15 @@ export class TextureAtlas {
     }
 
     const textureIndex = getTextureIndexForFace(type, face)
+    return this.getUVsForIndex(textureIndex)
+  }
+
+  /**
+   * Get UV coordinates for a texture index
+   * Returns [u1, v1, u2, v2] for the texture region
+   * Feature: 023-hand-item-attack-animation
+   */
+  getUVsForIndex(textureIndex: number): [number, number, number, number] {
     const { columns, rows } = this.config
     
     // Calculate UV based on column (all textures in row 0)

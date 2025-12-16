@@ -1,19 +1,18 @@
 /**
  * Rabbit - Rabbit animal entity
  * Feature: 009-ecosystem-flora-fauna
+ * Feature: 022-animal-animation-system - Enhanced animations
  */
 
 import * as THREE from 'three'
 import { Animal } from './Animal'
 import { AnimalType } from './AnimalTypes'
+import { AnimalAnimationState } from '../animation/AnimationState'
 
 /**
  * Rabbit animal - small, brown, fast moving
  */
 export class Rabbit extends Animal {
-  private bodyMesh!: THREE.Mesh
-  private headMesh!: THREE.Mesh
-  private legMeshes: THREE.Mesh[] = []
   private earMeshes: THREE.Mesh[] = []
 
   constructor(x: number, y: number, z: number) {
@@ -103,12 +102,15 @@ export class Rabbit extends Animal {
   protected updateAnimation(deltaTime: number): void {
     super.updateAnimation(deltaTime)
     
-    // Animate legs when moving (hopping motion)
-    if (this.state !== 0) { // Not IDLE
+    // Rabbit has unique hopping motion
+    const isMoving = this.animData.currentState === AnimalAnimationState.WALKING ||
+                     this.animData.currentState === AnimalAnimationState.RUNNING
+    
+    if (isMoving && this.bodyMesh) {
       const hopPhase = Math.sin(this.animationTime * 12)
-      const legSwing = hopPhase * 0.4
       
-      // Back legs move together, front legs move together
+      // Back legs move together, front legs move together (hopping)
+      const legSwing = hopPhase * 0.4
       if (this.legMeshes[0]) this.legMeshes[0].rotation.x = legSwing
       if (this.legMeshes[1]) this.legMeshes[1].rotation.x = legSwing
       if (this.legMeshes[2]) this.legMeshes[2].rotation.x = -legSwing
@@ -116,22 +118,13 @@ export class Rabbit extends Animal {
 
       // Hopping body motion
       this.bodyMesh.position.y = 0.25 + Math.abs(hopPhase) * 0.05
-    } else {
-      // Reset when idle
-      for (const leg of this.legMeshes) {
-        leg.rotation.x = 0
-      }
+    } else if (this.bodyMesh) {
       this.bodyMesh.position.y = 0.25
     }
 
     // Ear twitch
     for (const ear of this.earMeshes) {
-      ear.rotation.z = Math.sin(this.animationTime * 3 + Math.random()) * 0.1
-    }
-
-    // Nose wiggle
-    if (this.headMesh) {
-      this.headMesh.rotation.x = Math.sin(this.animationTime * 4) * 0.03
+      ear.rotation.z = Math.sin(this.animationTime * 3 + Math.random() * 0.1) * 0.1
     }
   }
 }

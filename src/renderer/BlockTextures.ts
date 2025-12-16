@@ -58,6 +58,14 @@ export const TextureIndex = {
   // Food items (021-food-system)
   RAW_BEEF: 22,
   RAW_PORKCHOP: 23,
+  // Cooked food items (023-campfire-system) - reuse raw textures with different tint
+  COOKED_BEEF: 22,      // Same as RAW_BEEF
+  COOKED_PORKCHOP: 23,  // Same as RAW_PORKCHOP
+  COOKED_MUTTON: 22,    // Same as RAW_BEEF
+  COOKED_CHICKEN: 23,   // Same as RAW_PORKCHOP
+  COOKED_RABBIT: 22,    // Same as RAW_BEEF
+  // Campfire (023-campfire-system)
+  CAMPFIRE: 21,         // Use torch texture as placeholder
 } as const
 
 /**
@@ -223,6 +231,38 @@ export const BLOCK_TEXTURE_MAPS: Partial<Record<BlockType, BlockTextureMap>> = {
     top: TextureIndex.RAW_BEEF,  // Reuse beef texture
     bottom: TextureIndex.RAW_BEEF,
     side: TextureIndex.RAW_BEEF
+  },
+  // Cooked food items (023-campfire-system)
+  [BlockType.COOKED_BEEF]: {
+    top: TextureIndex.COOKED_BEEF,
+    bottom: TextureIndex.COOKED_BEEF,
+    side: TextureIndex.COOKED_BEEF
+  },
+  [BlockType.COOKED_PORKCHOP]: {
+    top: TextureIndex.COOKED_PORKCHOP,
+    bottom: TextureIndex.COOKED_PORKCHOP,
+    side: TextureIndex.COOKED_PORKCHOP
+  },
+  [BlockType.COOKED_MUTTON]: {
+    top: TextureIndex.COOKED_MUTTON,
+    bottom: TextureIndex.COOKED_MUTTON,
+    side: TextureIndex.COOKED_MUTTON
+  },
+  [BlockType.COOKED_CHICKEN]: {
+    top: TextureIndex.COOKED_CHICKEN,
+    bottom: TextureIndex.COOKED_CHICKEN,
+    side: TextureIndex.COOKED_CHICKEN
+  },
+  [BlockType.COOKED_RABBIT]: {
+    top: TextureIndex.COOKED_RABBIT,
+    bottom: TextureIndex.COOKED_RABBIT,
+    side: TextureIndex.COOKED_RABBIT
+  },
+  // Campfire (023-campfire-system)
+  [BlockType.CAMPFIRE]: {
+    top: TextureIndex.CAMPFIRE,
+    bottom: TextureIndex.CAMPFIRE,
+    side: TextureIndex.CAMPFIRE
   }
 }
 

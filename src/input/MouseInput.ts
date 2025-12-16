@@ -1,6 +1,7 @@
 /**
  * MouseInput - handles mouse input with pointer lock
  * Feature: 021-food-system - Added rightMouseDown state
+ * Feature: 023-digging-system - Added leftMouseDown state
  */
 export class MouseInput {
   private canvas: HTMLCanvasElement
@@ -8,6 +9,7 @@ export class MouseInput {
   private deltaY: number = 0
   private leftClicked: boolean = false
   private rightClicked: boolean = false
+  private leftMouseDown: boolean = false
   private rightMouseDown: boolean = false
   private locked: boolean = false
   private lockChangeCallback: ((locked: boolean) => void) | null = null
@@ -52,6 +54,7 @@ export class MouseInput {
 
     if (event.button === 0) {
       this.leftClicked = true
+      this.leftMouseDown = true
     } else if (event.button === 2) {
       this.rightClicked = true
       this.rightMouseDown = true
@@ -59,10 +62,12 @@ export class MouseInput {
   }
 
   /**
-   * Handle mouse button up (Feature: 021-food-system)
+   * Handle mouse button up (Feature: 021-food-system, 023-digging-system)
    */
   private handleMouseUp(event: MouseEvent): void {
-    if (event.button === 2) {
+    if (event.button === 0) {
+      this.leftMouseDown = false
+    } else if (event.button === 2) {
       this.rightMouseDown = false
     }
   }
@@ -140,6 +145,13 @@ export class MouseInput {
    */
   wasRightClicked(): boolean {
     return this.rightClicked
+  }
+
+  /**
+   * Check if left mouse button is currently held down (Feature: 023-digging-system)
+   */
+  isLeftMouseDown(): boolean {
+    return this.leftMouseDown
   }
 
   /**

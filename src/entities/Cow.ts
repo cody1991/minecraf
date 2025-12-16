@@ -1,6 +1,7 @@
 /**
  * Cow - Cow animal entity
  * Feature: 008-biome-weather-system
+ * Feature: 022-animal-animation-system - Enhanced animations
  */
 
 import * as THREE from 'three'
@@ -11,10 +12,6 @@ import { AnimalType } from './AnimalTypes'
  * Cow animal - brown colored, larger body
  */
 export class Cow extends Animal {
-  private bodyMesh!: THREE.Mesh
-  private headMesh!: THREE.Mesh
-  private legMeshes: THREE.Mesh[] = []
-
   constructor(x: number, y: number, z: number) {
     super(AnimalType.COW, x, y, z)
     // Set collision dimensions for cow
@@ -96,30 +93,5 @@ export class Cow extends Animal {
     const udder = new THREE.Mesh(udderGeometry, udderMaterial)
     udder.position.set(0, 0.35, -0.2)
     this.mesh.add(udder)
-  }
-
-  protected updateAnimation(deltaTime: number): void {
-    super.updateAnimation(deltaTime)
-    
-    // Animate legs when moving
-    if (this.state !== 0) { // Not IDLE
-      const legSwing = Math.sin(this.animationTime * 8) * 0.3
-      
-      // Front legs swing opposite to back legs
-      if (this.legMeshes[0]) this.legMeshes[0].rotation.x = legSwing
-      if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -legSwing
-      if (this.legMeshes[2]) this.legMeshes[2].rotation.x = -legSwing
-      if (this.legMeshes[3]) this.legMeshes[3].rotation.x = legSwing
-    } else {
-      // Reset leg rotation when idle
-      for (const leg of this.legMeshes) {
-        leg.rotation.x = 0
-      }
-    }
-
-    // Subtle head bob
-    if (this.headMesh) {
-      this.headMesh.rotation.x = Math.sin(this.animationTime * 2) * 0.05
-    }
   }
 }

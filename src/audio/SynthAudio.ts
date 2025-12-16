@@ -10,12 +10,13 @@
 import { BlockSoundCategory, BlockSoundAction, BLOCK_SOUND_PARAMS } from './AudioTypes'
 
 /**
- * Generate block interaction sound (place or break)
+ * Generate block interaction sound (place, break, or dig)
  * Feature: 017-block-sound-effects
+ * Feature: 023-digging-system - Added dig sound
  * 
  * @param audioContext The Web Audio API context
  * @param category The block sound category
- * @param action The action (place or break)
+ * @param action The action (place, break, or dig)
  * @returns AudioBuffer with the generated sound
  */
 export function generateBlockSound(
@@ -25,14 +26,22 @@ export function generateBlockSound(
 ): AudioBuffer {
   const params = BLOCK_SOUND_PARAMS[category]
   const sampleRate = audioContext.sampleRate
-  const duration = params.duration
+  
+  // Dig sounds are shorter and softer
+  const duration = action === 'dig' ? params.duration * 0.6 : params.duration
   const length = Math.floor(sampleRate * duration)
   const buffer = audioContext.createBuffer(1, length, sampleRate)
   const data = buffer.getChannelData(0)
 
-  // Place sounds are higher pitched than break sounds
-  const pitchMultiplier = action === 'place' ? 1.2 : 1.0
+  // Place sounds are higher pitched, dig sounds are lower
+  let pitchMultiplier = 1.0
+  if (action === 'place') pitchMultiplier = 1.2
+  else if (action === 'dig') pitchMultiplier = 0.8
+  
   const baseFreq = params.baseFrequency * pitchMultiplier
+  
+  // Volume multiplier (dig sounds are quieter)
+  const volumeMultiplier = action === 'dig' ? 0.3 : 0.5
 
   for (let i = 0; i < length; i++) {
     const t = i / sampleRate
@@ -46,17 +55,19 @@ export function generateBlockSound(
     sample += Math.sin(2 * Math.PI * freq * 2 * t) * 0.3 * (1 - params.noiseMix)
     sample += Math.sin(2 * Math.PI * freq * 0.5 * t) * 0.2 * (1 - params.noiseMix)
 
-    // Noise component
-    sample += (Math.random() * 2 - 1) * params.noiseMix
+    // Noise component (more noise for dig sounds)
+    const noiseMix = action === 'dig' ? params.noiseMix * 1.5 : params.noiseMix
+    sample += (Math.random() * 2 - 1) * Math.min(noiseMix, 1)
 
-    // Apply exponential decay envelope
-    const envelope = Math.exp(-t * params.decayRate)
+    // Apply exponential decay envelope (faster decay for dig)
+    const decayRate = action === 'dig' ? params.decayRate * 1.5 : params.decayRate
+    const envelope = Math.exp(-t * decayRate)
 
     // Apply attack for smoother start
     const attack = 0.005
     const attackEnv = t < attack ? t / attack : 1
 
-    data[i] = sample * envelope * attackEnv * 0.5
+    data[i] = sample * envelope * attackEnv * volumeMultiplier
   }
 
   return buffer

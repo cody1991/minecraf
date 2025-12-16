@@ -1,10 +1,12 @@
 /**
  * EntityManager - Manages all game entities
  * Feature: 008-biome-weather-system
+ * Feature: 022-animal-animation-system - Added death animation handling
  */
 
 import * as THREE from 'three'
 import { Entity } from './Entity'
+import { Animal } from './Animal'
 import { ICollisionWorld } from '../physics/PhysicsTypes'
 
 /**
@@ -144,10 +146,20 @@ export class EntityManager {
 
   /**
    * Update all entities
+   * Feature: 022-animal-animation-system - Added death animation cleanup
    */
   update(deltaTime: number, playerPosition: THREE.Vector3, world?: ICollisionWorld): void {
+    // Track entities to remove after death animation
+    const toRemove: string[] = []
+    
     for (const entity of this.entities.values()) {
       if (!entity.isActive) continue
+
+      // Check if animal death animation is complete
+      if (entity instanceof Animal && entity.isDead && entity.isDeathAnimationComplete()) {
+        toRemove.push(entity.id)
+        continue
+      }
 
       // Store old chunk position
       const oldChunkX = entity.chunkX
@@ -178,6 +190,11 @@ export class EntityManager {
         }
         this.entitiesByChunk.get(newChunkKey)!.add(entity.id)
       }
+    }
+    
+    // Remove entities with completed death animations
+    for (const id of toRemove) {
+      this.remove(id)
     }
   }
 

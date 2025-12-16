@@ -30,6 +30,12 @@ export class Inventory {
 
   /** Callback when inventory changes */
   private onChangeCallback: (() => void) | null = null
+  
+  /** Callback when selection changes (Feature: 023-hand-item-attack-animation) */
+  private onSelectionChangeCallback: (() => void) | null = null
+  
+  /** Callback when inventory content changes (Feature: 023-hand-item-attack-animation) */
+  private onInventoryChangeCallback: (() => void) | null = null
 
   constructor() {
     // Initialize all slots as empty
@@ -57,6 +63,7 @@ export class Inventory {
     if (index >= 0 && index < HOTBAR_SLOTS) {
       this._selectedSlot = index
       this.notifyChange()
+      this.notifySelectionChange()
     }
   }
 
@@ -66,6 +73,20 @@ export class Inventory {
   setOnChange(callback: () => void): void {
     this.onChangeCallback = callback
   }
+  
+  /**
+   * Set selection change callback (Feature: 023-hand-item-attack-animation)
+   */
+  setOnSelectionChange(callback: () => void): void {
+    this.onSelectionChangeCallback = callback
+  }
+  
+  /**
+   * Set inventory change callback (Feature: 023-hand-item-attack-animation)
+   */
+  setOnInventoryChange(callback: () => void): void {
+    this.onInventoryChangeCallback = callback
+  }
 
   /**
    * Notify listeners of inventory change
@@ -73,6 +94,24 @@ export class Inventory {
   private notifyChange(): void {
     if (this.onChangeCallback) {
       this.onChangeCallback()
+    }
+  }
+  
+  /**
+   * Notify listeners of selection change (Feature: 023-hand-item-attack-animation)
+   */
+  private notifySelectionChange(): void {
+    if (this.onSelectionChangeCallback) {
+      this.onSelectionChangeCallback()
+    }
+  }
+  
+  /**
+   * Notify listeners of inventory content change (Feature: 023-hand-item-attack-animation)
+   */
+  private notifyInventoryChange(): void {
+    if (this.onInventoryChangeCallback) {
+      this.onInventoryChangeCallback()
     }
   }
 
@@ -138,6 +177,7 @@ export class Inventory {
 
     if (added > 0) {
       this.notifyChange()
+      this.notifyInventoryChange()
     }
 
     return added
@@ -167,6 +207,7 @@ export class Inventory {
 
     if (toRemove > 0) {
       this.notifyChange()
+      this.notifyInventoryChange()
     }
 
     return toRemove

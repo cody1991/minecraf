@@ -1,19 +1,18 @@
 /**
  * Chicken - Chicken animal entity
  * Feature: 008-biome-weather-system
+ * Feature: 022-animal-animation-system - Enhanced animations
  */
 
 import * as THREE from 'three'
 import { Animal } from './Animal'
 import { AnimalType } from './AnimalTypes'
+import { calculateLegSwing } from '../animation/AnimationState'
 
 /**
  * Chicken animal - white body, red comb, smaller size
  */
 export class Chicken extends Animal {
-  private bodyMesh!: THREE.Mesh
-  private headMesh!: THREE.Mesh
-  private legMeshes: THREE.Mesh[] = []
   private wingMeshes: THREE.Mesh[] = []
 
   constructor(x: number, y: number, z: number) {
@@ -111,19 +110,12 @@ export class Chicken extends Animal {
   protected updateAnimation(deltaTime: number): void {
     super.updateAnimation(deltaTime)
     
-    // Animate legs when moving (faster for chicken)
-    if (this.state !== 0) { // Not IDLE
-      const legSwing = Math.sin(this.animationTime * 15) * 0.4
-      
-      if (this.legMeshes[0]) this.legMeshes[0].rotation.x = legSwing
-      if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -legSwing
-    } else {
-      for (const leg of this.legMeshes) {
-        leg.rotation.x = 0
-      }
-    }
-
-    // Wing flap animation (occasional)
+    // Chicken has faster leg animation
+    const swing = calculateLegSwing(this.animData.currentState, this.animationTime, 0.4)
+    if (this.legMeshes[0]) this.legMeshes[0].rotation.x = swing
+    if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -swing
+    
+    // Wing flap animation
     const wingFlap = Math.sin(this.animationTime * 4) * 0.2
     if (this.wingMeshes[0]) this.wingMeshes[0].rotation.z = wingFlap
     if (this.wingMeshes[1]) this.wingMeshes[1].rotation.z = -wingFlap
@@ -131,7 +123,6 @@ export class Chicken extends Animal {
     // Head bobbing (chicken-like)
     if (this.headMesh) {
       this.headMesh.position.z = 0.3 + Math.sin(this.animationTime * 6) * 0.03
-      this.headMesh.rotation.x = Math.sin(this.animationTime * 3) * 0.1
     }
   }
 }

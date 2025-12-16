@@ -29,6 +29,13 @@ import { EatingProgressUI } from './ui/EatingProgressUI'
 import { FoodRegistry } from './survival/FoodRegistry'
 import { ItemEntity } from './entities/ItemEntity'
 import { Animal } from './entities/Animal'
+import { HandRenderer } from './player/HandRenderer'
+import { DiggingManager } from './player/DiggingManager'
+import { DiggingProgressUI } from './ui/DiggingProgressUI'
+import { CrackOverlay } from './renderer/CrackOverlay'
+import { CampfireManager } from './entities/CampfireManager'
+import { BlockType } from './core/Block'
+import { Raycaster, INTERACTION_DISTANCE } from './utils/Raycaster'
 
 /**
  * WebCraft - Web 版我的世界
@@ -39,6 +46,8 @@ import { Animal } from './entities/Animal'
  * Feature: 018-world-save-system - Added save/load functionality
  * Feature: 019-inventory-system - Added inventory and hotbar
  * Feature: 020-survival-mechanics - Added survival system
+ * Feature: 023-digging-system - Added progressive digging
+ * Feature: 023-campfire-system - Added campfire cooking
  */
 
 // Wait for DOM to be ready
@@ -70,6 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Register player with game for underwater effect
   game.setPlayer(player)
 
+  // ============================================================================
+  // Initial Inventory Setup (Feature: 023-campfire-system)
+  // ============================================================================
+  // Give player starter items for testing campfire cooking
+  player.inventory.addItem(BlockType.CAMPFIRE, 4)      // Campfires
+  player.inventory.addItem(BlockType.RAW_BEEF, 8)      // Raw beef
+  player.inventory.addItem(BlockType.RAW_PORKCHOP, 4)  // Raw porkchop
+  player.inventory.addItem(BlockType.RAW_CHICKEN, 4)   // Raw chicken
+
   // Create character model from saved preference or default
   const savedModelId = preferenceManager.getSelectedModelId('default')
   let characterModel = modelLibrary.createModelInstance(savedModelId)
@@ -80,6 +98,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create camera controller with view switching support
   const cameraController = new CameraController(game.getCamera(), player, game.getWorld())
   cameraController.setCharacterModel(characterModel)
+
+  // ============================================================================
+  // Hand Renderer Setup (Feature: 023-hand-item-attack-animation)
+  // ============================================================================
+  
+  // Create hand renderer for first-person held item display
+  const handRenderer = new HandRenderer()
+  
+  // Attach hand renderer to camera
+  game.getCamera().add(handRenderer.getContainer())
+  
+  // Set initial held item from hotbar
+  const updateHandItem = () => {
+    const selectedItem = player.inventory.getSelectedItem()
+    handRenderer.setItem(selectedItem.itemType)
+  }
+  updateHandItem()
+  
+  // Update hand item when hotbar selection changes
+  player.inventory.setOnSelectionChange(updateHandItem)
+  player.inventory.setOnInventoryChange(updateHandItem)
 
   // Create character select UI
   const characterSelectUI = new CharacterSelectUI()
@@ -173,23 +212,29 @@ document.addEventListener('DOMContentLoaded', () => {
   eatingSystem.setCallbacks({
     onEatingStart: () => {
       eatingProgressUI.show()
+      handRenderer.startEating()
+      characterModel.startEating() // Third-person eating animation
     },
     onEatingProgress: (progress) => {
       eatingProgressUI.setProgress(progress)
     },
     onEatingComplete: (_foodType, hungerRestored) => {
       eatingProgressUI.hide()
+      handRenderer.stopEating()
+      characterModel.stopEating() // Stop third-person eating animation
       console.log(`[Eating] Restored ${hungerRestored} hunger`)
     },
     onEatingCancel: () => {
       eatingProgressUI.hide()
+      handRenderer.stopEating()
+      characterModel.stopEating() // Stop third-person eating animation
     }
   })
 
   // Create input manager
   const inputManager = new InputManager(game.getRenderer().getDomElement())
 
-  // Create block interaction
+  // Create block interaction (for placing blocks)
   const blockInteraction = new BlockInteraction(
     game.getWorld(),
     player,
@@ -199,6 +244,72 @@ document.addEventListener('DOMContentLoaded', () => {
   // Connect item drop callback (Feature: 019-inventory-system)
   blockInteraction.setOnItemDrop((item) => {
     game.addItemEntity(item)
+  })
+
+  // ============================================================================
+  // Digging System Setup (Feature: 023-digging-system)
+  // ============================================================================
+  
+  // Create digging manager
+  const diggingManager = new DiggingManager(game.getWorld(), player)
+  
+  // Create digging progress UI
+  const diggingProgressUI = new DiggingProgressUI()
+  
+  // Create crack overlay
+  const crackOverlay = new CrackOverlay(game.getRenderer().getScene())
+  
+  // ============================================================================
+  // Campfire System Setup (Feature: 023-campfire-system)
+  // ============================================================================
+  
+  // Create campfire manager
+  const campfireManager = new CampfireManager(
+    game.getRenderer().getScene(),
+    game.getWorld()
+  )
+  
+  // Set up campfire item drop callback
+  campfireManager.setOnItemDrop((item) => {
+    game.addItemEntity(item)
+  })
+
+  // Digging animation timer
+  let diggingAnimTimer = 0
+  const DIGGING_ANIM_INTERVAL = 0.3 // Swing every 0.3 seconds while digging
+
+  // Set up digging callbacks
+  diggingManager.setCallbacks({
+    onProgressChange: (progress, crackStage) => {
+      diggingProgressUI.setProgress(progress)
+      const target = diggingManager.getTargetBlock()
+      if (target) {
+        crackOverlay.show(target.x, target.y, target.z, crackStage)
+      }
+    },
+    onDiggingStart: () => {
+      diggingProgressUI.show()
+      diggingAnimTimer = 0
+      handRenderer.attack() // Initial swing
+      characterModel.triggerAttack() // Third-person attack animation
+    },
+    onDiggingStop: () => {
+      diggingProgressUI.hide()
+      crackOverlay.hide()
+      diggingAnimTimer = 0
+    },
+    onBlockBreak: (x, y, z, blockType) => {
+      diggingProgressUI.hide()
+      crackOverlay.hide()
+      diggingAnimTimer = 0
+      // Handle campfire removal
+      if (blockType === BlockType.CAMPFIRE) {
+        campfireManager.onBlockRemoved(x, y, z)
+      }
+    },
+    onItemDrop: (item) => {
+      game.addItemEntity(item)
+    }
   })
 
   // Create UI components
@@ -385,6 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update combat system (Feature: 021-food-system)
     combatSystem.update(deltaTime)
     
+    // Update campfire system (Feature: 023-campfire-system)
+    campfireManager.update(deltaTime)
+    combatSystem.update(deltaTime)
+    
     // Set up death callbacks for newly spawned animals
     setupAnimalDeathCallback()
     
@@ -434,30 +549,89 @@ document.addEventListener('DOMContentLoaded', () => {
         hotbarUI.selectNext()
       }
 
-      // Handle block destruction (left click) - with combat priority (Feature: 021-food-system)
+      // Handle block destruction (left click/hold) - Feature: 023-digging-system
       if (input.leftClick) {
+        // Trigger attack animation (Feature: 023-hand-item-attack-animation)
+        handRenderer.attack()
+        characterModel.triggerAttack() // Third-person attack animation
+        
         // Try to attack animal first
         const eyePos = player.getEyePosition()
         const lookDir = player.getLookDirection()
         const combatResult = combatSystem.attack(eyePos, lookDir)
         
-        // If no animal hit, try to destroy block
-        if (!combatResult.hit) {
-          blockInteraction.destroyBlock()
+        // If animal hit, stop any digging in progress
+        if (combatResult.hit) {
+          diggingManager.forceStop()
+        }
+      }
+      
+      // Update digging system (Feature: 023-digging-system)
+      // Only dig if holding left mouse and not attacking animals
+      const shouldDig = input.leftMouseDown && !combatSystem.hasRecentHit()
+      diggingManager.update(deltaTime, shouldDig)
+      
+      // Update digging animation (swing periodically while digging)
+      if (diggingManager.isDigging()) {
+        diggingAnimTimer += deltaTime
+        if (diggingAnimTimer >= DIGGING_ANIM_INTERVAL) {
+          diggingAnimTimer = 0
+          handRenderer.attack()
+          characterModel.triggerAttack() // Third-person attack animation
         }
       }
 
-      // Handle block placement / eating (right click) - Feature: 021-food-system
+      // Handle block placement / eating / campfire (right click)
       if (input.rightClick) {
-        // Check if holding food and can eat
-        if (eatingSystem.canEat()) {
-          // Start eating if not already eating
-          if (!eatingSystem.isEating()) {
-            eatingSystem.startEating(player.position)
+        const selectedItem = player.inventory.getSelectedItem()
+        const holdingRawFood = selectedItem.itemType && FoodRegistry.isRawFood(selectedItem.itemType)
+        const holdingFood = selectedItem.itemType && FoodRegistry.isFoodBlock(selectedItem.itemType)
+        
+        // Check if looking at campfire while holding raw food
+        if (holdingRawFood) {
+          const raycaster = new Raycaster(game.getWorld())
+          const hit = raycaster.cast(player.getEyePosition(), player.getLookDirection())
+          
+          if (hit && hit.distance <= INTERACTION_DISTANCE && hit.blockType === BlockType.CAMPFIRE) {
+            // Try to add food to campfire
+            const added = campfireManager.addFoodToCampfire(
+              hit.blockX, hit.blockY, hit.blockZ,
+              selectedItem.itemType!
+            )
+            if (added) {
+              // Remove one food from inventory
+              player.inventory.removeItem(player.inventory.selectedSlot, 1)
+              console.log('[Campfire] Added food to cook')
+            } else {
+              console.log('[Campfire] Campfire is full')
+            }
+          } else if (eatingSystem.canEat()) {
+            // Not looking at campfire, try to eat raw food
+            if (!eatingSystem.isEating()) {
+              eatingSystem.startEating(player.position)
+            }
           }
+          // If can't eat (hunger full), do nothing with raw food
+        } else if (holdingFood) {
+          // Holding cooked food, try to eat
+          if (eatingSystem.canEat()) {
+            if (!eatingSystem.isEating()) {
+              eatingSystem.startEating(player.position)
+            }
+          }
+          // If can't eat (hunger full), do nothing - don't place food as block
         } else {
           // Not holding food, place block
-          blockInteraction.placeBlock()
+          const placeResult = blockInteraction.placeBlock()
+          if (placeResult) {
+            // Trigger place animation
+            handRenderer.place()
+            
+            // Check if placed a campfire (Feature: 023-campfire-system)
+            if (placeResult.blockType === BlockType.CAMPFIRE) {
+              campfireManager.onBlockPlaced(placeResult.x, placeResult.y, placeResult.z, BlockType.CAMPFIRE)
+            }
+          }
         }
       }
       
@@ -467,6 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Handle inventory toggle (E key) - Feature: 019-inventory-system
       if (input.inventoryToggle) {
         inventoryUI.open(player.inventory)
+        diggingManager.forceStop() // Stop digging when opening inventory
       }
 
       // Handle map toggle (M key)
@@ -478,10 +653,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (input.viewToggle) {
         cameraController.toggleViewMode()
         const isFirstPerson = cameraController.currentMode === ViewMode.FIRST_PERSON
-        // First person: show 2D crosshair, hide 3D indicator
-        // Third person: hide 2D crosshair, show 3D indicator
+        // First person: show 2D crosshair, hide 3D indicator, show hand
+        // Third person: hide 2D crosshair, show 3D indicator, hide hand
         crosshair.setVisible(isFirstPerson)
         targetIndicator.setVisible(!isFirstPerson)
+        handRenderer.visible = isFirstPerson
       }
 
       // Handle character select (C key)
@@ -566,6 +742,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update camera to follow player
     cameraController.update(deltaTime)
+    
+    // Update hand renderer (Feature: 023-hand-item-attack-animation)
+    const isMoving = player.velocity.lengthSq() > 0.1 && player.isGrounded
+    handRenderer.update(deltaTime, isMoving)
 
     // Update 3D target indicator (for third-person view)
     targetIndicator.update()

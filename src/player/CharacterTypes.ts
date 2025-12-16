@@ -14,7 +14,7 @@ export enum ViewMode {
 /**
  * Character animation types
  */
-export type CharacterAnimation = 'idle' | 'walk' | 'jump'
+export type CharacterAnimation = 'idle' | 'walk' | 'jump' | 'attack' | 'eating'
 
 /**
  * Model style types

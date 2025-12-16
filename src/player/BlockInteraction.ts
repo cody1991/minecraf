@@ -92,37 +92,39 @@ export class BlockInteraction {
   /**
    * Try to place a block where the player is looking
    * Feature: 019-inventory-system - Uses item from inventory instead of selectedBlockType
+   * Feature: 023-campfire-system - Returns placement info for campfire creation
+   * @returns Placement info with position and block type, or null if failed
    */
-  placeBlock(): boolean {
+  placeBlock(): { x: number; y: number; z: number; blockType: BlockType } | null {
     const hit = this.getTargetBlock()
-    if (!hit) return false
+    if (!hit) return null
 
     // Check distance
-    if (hit.distance > INTERACTION_DISTANCE) return false
+    if (hit.distance > INTERACTION_DISTANCE) return null
 
     // Get placement position (adjacent to hit block)
     const placePos = this.raycaster.getPlacementPosition(hit)
 
     // Validate placement position
     if (!this.world.isValidPosition(placePos.x, placePos.y, placePos.z)) {
-      return false
+      return null
     }
 
     // Check if position is already occupied
     if (isSolid(this.world.getBlock(placePos.x, placePos.y, placePos.z))) {
-      return false
+      return null
     }
 
     // Check if placement would intersect with player
     if (this.wouldIntersectPlayer(placePos.x, placePos.y, placePos.z)) {
-      return false
+      return null
     }
 
     // Get the block type from inventory (Feature: 019-inventory-system)
     const selectedItem = this.player.inventory.getSelectedItem()
     if (!selectedItem.itemType || selectedItem.count <= 0) {
       // No item in selected slot, fall back to legacy behavior
-      return false
+      return null
     }
     
     const blockType = selectedItem.itemType
@@ -151,9 +153,11 @@ export class BlockInteraction {
       if (this.onWorldChange) {
         this.onWorldChange()
       }
+      
+      return { x: placePos.x, y: placePos.y, z: placePos.z, blockType }
     }
 
-    return success
+    return null
   }
 
   /**

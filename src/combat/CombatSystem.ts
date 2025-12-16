@@ -1,6 +1,7 @@
 /**
  * CombatSystem - Player combat system
  * Feature: 021-food-system
+ * Feature: 023-digging-system - Added hasRecentHit check
  * 
  * Handles player attacks on animals using raycasting.
  */
@@ -28,6 +29,8 @@ export class CombatSystem {
   private entityManager: EntityManager
   private attackCooldownTimer: number = 0
   private raycaster: THREE.Raycaster
+  private lastHitTime: number = 0
+  private readonly HIT_MEMORY_DURATION = 0.3 // Remember hit for 0.3 seconds
 
   constructor(entityManager: EntityManager) {
     this.entityManager = entityManager
@@ -43,11 +46,21 @@ export class CombatSystem {
   }
 
   /**
+   * Check if there was a recent hit (used to prevent digging after hitting animal)
+   */
+  hasRecentHit(): boolean {
+    return this.lastHitTime > 0
+  }
+
+  /**
    * Update cooldown timer
    */
   update(deltaTime: number): void {
     if (this.attackCooldownTimer > 0) {
       this.attackCooldownTimer -= deltaTime
+    }
+    if (this.lastHitTime > 0) {
+      this.lastHitTime -= deltaTime
     }
   }
 
@@ -111,6 +124,9 @@ export class CombatSystem {
         result.target = closestAnimal
         result.distance = closestDistance
         result.damage = ATTACK_DAMAGE
+        
+        // Remember hit to prevent digging
+        this.lastHitTime = this.HIT_MEMORY_DURATION
 
         // Play attack hit sound
         this.playAttackSound(closestAnimal.position)

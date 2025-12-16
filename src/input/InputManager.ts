@@ -7,6 +7,7 @@ import { MouseInput } from './MouseInput'
  * Feature: 013-character-model-view - Added viewToggle
  * Feature: 018-world-save-system - Added escapeMenu
  * Feature: 019-inventory-system - Added inventoryToggle
+ * Feature: 023-digging-system - Added leftMouseDown
  */
 export interface InputState {
   // Movement keys
@@ -28,6 +29,9 @@ export interface InputState {
   // Mouse buttons (true only on the frame they were clicked)
   leftClick: boolean
   rightClick: boolean
+  
+  // Left mouse button held state (Feature: 023-digging-system)
+  leftMouseDown: boolean
   
   // Right mouse button held state (Feature: 021-food-system)
   rightMouseDown: boolean
@@ -82,6 +86,7 @@ export class InputManager {
       mouseY: this.mouseInput.getMouseDeltaY(),
       leftClick: this.mouseInput.wasLeftClicked(),
       rightClick: this.mouseInput.wasRightClicked(),
+      leftMouseDown: this.mouseInput.isLeftMouseDown(),
       rightMouseDown: this.mouseInput.isRightMouseDown(),
       numberKey: this.keyboardInput.getNumberKeyPressed(),
       tabCycle: this.keyboardInput.wasTabPressed(),

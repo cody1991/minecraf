@@ -1,6 +1,7 @@
 /**
  * Sheep - Sheep animal entity
  * Feature: 008-biome-weather-system
+ * Feature: 022-animal-animation-system - Enhanced animations
  */
 
 import * as THREE from 'three'
@@ -11,10 +12,6 @@ import { AnimalType } from './AnimalTypes'
  * Sheep animal - white wool, gray face and legs
  */
 export class Sheep extends Animal {
-  private bodyMesh!: THREE.Mesh
-  private headMesh!: THREE.Mesh
-  private legMeshes: THREE.Mesh[] = []
-
   constructor(x: number, y: number, z: number) {
     super(AnimalType.SHEEP, x, y, z)
     // Set collision dimensions for sheep
@@ -76,35 +73,6 @@ export class Sheep extends Animal {
       leg.castShadow = true
       this.legMeshes.push(leg)
       this.mesh.add(leg)
-    }
-  }
-
-  protected updateAnimation(deltaTime: number): void {
-    super.updateAnimation(deltaTime)
-    
-    // Animate legs when moving
-    if (this.state !== 0) { // Not IDLE
-      const legSwing = Math.sin(this.animationTime * 8) * 0.3
-      
-      if (this.legMeshes[0]) this.legMeshes[0].rotation.x = legSwing
-      if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -legSwing
-      if (this.legMeshes[2]) this.legMeshes[2].rotation.x = -legSwing
-      if (this.legMeshes[3]) this.legMeshes[3].rotation.x = legSwing
-    } else {
-      for (const leg of this.legMeshes) {
-        leg.rotation.x = 0
-      }
-    }
-
-    // Subtle head movement
-    if (this.headMesh) {
-      this.headMesh.rotation.x = Math.sin(this.animationTime * 1.5) * 0.08
-    }
-
-    // Wool "breathing" effect
-    if (this.bodyMesh) {
-      const breathScale = 1 + Math.sin(this.animationTime * 2) * 0.02
-      this.bodyMesh.scale.set(breathScale, breathScale, breathScale)
     }
   }
 }

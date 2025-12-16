@@ -31,6 +31,7 @@ Auto-generated from all feature plans. Last updated: 2025-12-13
 - TypeScript 5.x + Three.js (渲染)、Vite (构建) (020-survival-mechanics)
 - IndexedDB (存档系统已存在) (020-survival-mechanics)
 - IndexedDB（现有存档系统） (021-food-system)
+- IndexedDB (现有存档系统) (001-gameplay-enhancements)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -50,9 +51,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 001-gameplay-enhancements: Added TypeScript 5.6 + ES2020 + Three.js 0.170.0, Vite 6.0
 - 021-food-system: Added TypeScript 5.6 + Three.js 0.170, Vite 6.0
 - 020-survival-mechanics: Added TypeScript 5.x + Three.js (渲染)、Vite (构建)
-- 019-inventory-system: Added TypeScript 5.6 (ES2020 target) + Three.js 0.170.0, Vite 6.0
 
 
 <!-- MANUAL ADDITIONS START -->

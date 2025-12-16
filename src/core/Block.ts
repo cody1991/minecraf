@@ -50,12 +50,20 @@ export enum BlockType {
   TORCH = 37,            // 火把照明
   // Survival mechanics blocks (020-survival-mechanics)
   LAVA = 38,             // 岩浆
+  // Campfire (023-campfire-system)
+  CAMPFIRE = 39,         // 篝火
   // Food items (021-food-system)
   RAW_BEEF = 50,
   RAW_PORKCHOP = 51,
   RAW_MUTTON = 52,
   RAW_CHICKEN = 53,
-  RAW_RABBIT = 54
+  RAW_RABBIT = 54,
+  // Cooked food items (023-campfire-system)
+  COOKED_BEEF = 60,
+  COOKED_PORKCHOP = 61,
+  COOKED_MUTTON = 62,
+  COOKED_CHICKEN = 63,
+  COOKED_RABBIT = 64
 }
 
 /**
@@ -118,12 +126,20 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.TORCH]: '火把',
   // Survival mechanics blocks (020-survival-mechanics)
   [BlockType.LAVA]: '岩浆',
+  // Campfire (023-campfire-system)
+  [BlockType.CAMPFIRE]: '篝火',
   // Food items (021-food-system)
   [BlockType.RAW_BEEF]: '生牛肉',
   [BlockType.RAW_PORKCHOP]: '生猪排',
   [BlockType.RAW_MUTTON]: '生羊肉',
   [BlockType.RAW_CHICKEN]: '生鸡肉',
-  [BlockType.RAW_RABBIT]: '生兔肉'
+  [BlockType.RAW_RABBIT]: '生兔肉',
+  // Cooked food items (023-campfire-system)
+  [BlockType.COOKED_BEEF]: '熟牛肉',
+  [BlockType.COOKED_PORKCHOP]: '熟猪排',
+  [BlockType.COOKED_MUTTON]: '熟羊肉',
+  [BlockType.COOKED_CHICKEN]: '熟鸡肉',
+  [BlockType.COOKED_RABBIT]: '熟兔肉'
 }
 
 /**
@@ -174,12 +190,20 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.TORCH]: 0xffcc00,
   // Survival mechanics blocks (020-survival-mechanics)
   [BlockType.LAVA]: 0xff4500,
+  // Campfire (023-campfire-system)
+  [BlockType.CAMPFIRE]: 0xff6600,  // 橙色火焰
   // Food items (021-food-system)
   [BlockType.RAW_BEEF]: 0xc41e3a,    // 红色肉块
   [BlockType.RAW_PORKCHOP]: 0xffb6c1, // 粉红色
   [BlockType.RAW_MUTTON]: 0x8b0000,   // 深红色
   [BlockType.RAW_CHICKEN]: 0xffdab9,  // 浅粉色
-  [BlockType.RAW_RABBIT]: 0xd2b48c    // 浅棕色
+  [BlockType.RAW_RABBIT]: 0xd2b48c,   // 浅棕色
+  // Cooked food items (023-campfire-system)
+  [BlockType.COOKED_BEEF]: 0x8b4513,    // 棕色熟肉
+  [BlockType.COOKED_PORKCHOP]: 0xcd853f, // 金棕色
+  [BlockType.COOKED_MUTTON]: 0xa0522d,   // 深棕色
+  [BlockType.COOKED_CHICKEN]: 0xdaa520,  // 金黄色
+  [BlockType.COOKED_RABBIT]: 0xb8860b    // 深金色
 }
 
 /**
@@ -543,6 +567,56 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     transparent: false,
     opacity: 1,
     solid: false
+  },
+  // Campfire (023-campfire-system)
+  [BlockType.CAMPFIRE]: {
+    name: '篝火',
+    nameEn: 'Campfire',
+    color: 0xff6600,
+    transparent: true,
+    opacity: 1,
+    solid: true
+  },
+  // Cooked food items (023-campfire-system)
+  [BlockType.COOKED_BEEF]: {
+    name: '熟牛肉',
+    nameEn: 'Cooked Beef',
+    color: 0x8b4513,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.COOKED_PORKCHOP]: {
+    name: '熟猪排',
+    nameEn: 'Cooked Porkchop',
+    color: 0xcd853f,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.COOKED_MUTTON]: {
+    name: '熟羊肉',
+    nameEn: 'Cooked Mutton',
+    color: 0xa0522d,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.COOKED_CHICKEN]: {
+    name: '熟鸡肉',
+    nameEn: 'Cooked Chicken',
+    color: 0xdaa520,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.COOKED_RABBIT]: {
+    name: '熟兔肉',
+    nameEn: 'Cooked Rabbit',
+    color: 0xb8860b,
+    transparent: false,
+    opacity: 1,
+    solid: false
   }
 }
 
@@ -636,5 +710,6 @@ export const PLACEABLE_BLOCKS: BlockType[] = [
   BlockType.LEAVES,
   BlockType.LOG,
   BlockType.PLANKS,
-  BlockType.SNOW
+  BlockType.SNOW,
+  BlockType.CAMPFIRE  // Feature: 023-campfire-system
 ]

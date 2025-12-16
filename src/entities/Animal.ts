@@ -3,6 +3,7 @@
  * Feature: 008-biome-weather-system
  * Feature: 012-sound-map-system - Added animal sounds
  * Feature: 020-survival-mechanics - Added health and combat
+ * Feature: 022-animal-animation-system - Enhanced animations
  */
 
 import * as THREE from 'three'
@@ -15,6 +16,14 @@ import { applyGravity } from '../physics/Gravity'
 import { BlockType } from '../core/Block'
 import { AudioManager } from '../audio/AudioManager'
 import { FoodRegistry } from '../survival/FoodRegistry'
+import { 
+  AnimalAnimationState, 
+  AnimalAnimationData, 
+  createDefaultAnimationData,
+  getAnimationConfig,
+  calculateLegSwing,
+  calculateBreathingScale
+} from '../animation/AnimationState'
 
 /** Gravity constant for animals (positive value, applied as downward force) */
 const ANIMAL_GRAVITY = 20
@@ -32,6 +41,15 @@ const MIN_SOUND_INTERVAL = 5
 const MAX_SOUND_INTERVAL = 20
 /** Damage flash duration (seconds) */
 const DAMAGE_FLASH_DURATION = 0.2
+/** Death animation duration (seconds) */
+const DEATH_ANIMATION_DURATION = 1.0
+/** Time after death before removal (seconds) */
+const DEATH_REMOVAL_DELAY = 0.5
+/** Head rotation limits (radians) */
+const HEAD_YAW_LIMIT = Math.PI / 3      // ±60 degrees
+const HEAD_PITCH_LIMIT = Math.PI / 6    // ±30 degrees
+/** Head rotation speed */
+const HEAD_ROTATION_SPEED = 3.0
 
 /**
  * Callback for animal death event
@@ -92,6 +110,22 @@ export abstract class Animal extends Entity implements IPhysicsBody {
   /** Death callback */
   private onDeathCallback: AnimalDeathCallback | null = null
 
+  // Animation system (Feature: 022-animal-animation-system)
+  /** Animation state data */
+  protected animData: AnimalAnimationData = createDefaultAnimationData()
+  /** Death animation timer */
+  private deathAnimTimer: number = 0
+  /** Whether death animation is complete */
+  private deathAnimComplete: boolean = false
+  /** Last known player position for head tracking */
+  private lastPlayerPosition: THREE.Vector3 = new THREE.Vector3()
+  /** Reference to head mesh for rotation (set by subclass) */
+  protected headMesh: THREE.Mesh | null = null
+  /** Reference to body mesh for breathing/dying (set by subclass) */
+  protected bodyMesh: THREE.Mesh | null = null
+  /** Reference to leg meshes for walking animation (set by subclass) */
+  protected legMeshes: THREE.Mesh[] = []
+
   constructor(type: AnimalType, x: number, y: number, z: number) {
     super(generateEntityId(), x, y, z)
     this.animalType = type
@@ -121,11 +155,27 @@ export abstract class Animal extends Entity implements IPhysicsBody {
    * Update animal state
    */
   update(deltaTime: number, playerPosition: THREE.Vector3, world?: ICollisionWorld): void {
-    // Skip update if dead
-    if (this._isDead) return
+    // Store player position for head tracking
+    this.lastPlayerPosition.copy(playerPosition)
+    
+    // Handle death animation (Feature: 022-animal-animation-system)
+    if (this._isDead) {
+      this.updateDeathAnimation(deltaTime)
+      return
+    }
     
     // Update damage flash (Feature: 020-survival-mechanics)
     this.updateDamageFlash(deltaTime)
+    
+    // Update hurt animation state
+    if (this.animData.currentState === AnimalAnimationState.HURT) {
+      this.animData.stateTime += deltaTime
+      const hurtConfig = getAnimationConfig(AnimalAnimationState.HURT)
+      if (this.animData.stateTime >= hurtConfig.duration) {
+        // Hurt animation complete, return to previous state
+        this.setAnimationState(this.animData.previousState)
+      }
+    }
     
     // Update AI
     const aiResult = updateAnimalAI(
@@ -152,8 +202,14 @@ export abstract class Animal extends Entity implements IPhysicsBody {
     // Update movement with collision detection
     this.updateMovement(deltaTime, world)
 
+    // Update animation state based on AI state
+    this.updateAnimationState()
+    
     // Update animation
     this.updateAnimation(deltaTime)
+    
+    // Update head tracking (Feature: 022-animal-animation-system)
+    this.updateHeadTracking(deltaTime, playerPosition)
     
     // Update ambient sounds
     this.updateSound(deltaTime, playerPosition)
@@ -167,6 +223,142 @@ export abstract class Animal extends Entity implements IPhysicsBody {
       this.position.z
     )
     this.mesh.rotation.y = this.rotation
+  }
+  
+  /**
+   * Update animation state based on AI state
+   */
+  private updateAnimationState(): void {
+    // Don't change state during hurt animation
+    if (this.animData.currentState === AnimalAnimationState.HURT) return
+    if (this.animData.currentState === AnimalAnimationState.DYING) return
+    
+    let newState: AnimalAnimationState
+    
+    if (this.inWater) {
+      newState = AnimalAnimationState.SWIMMING
+    } else if (this.state === AnimalState.IDLE) {
+      newState = AnimalAnimationState.IDLE
+    } else if (this.state === AnimalState.FLEEING) {
+      newState = AnimalAnimationState.RUNNING
+    } else {
+      newState = AnimalAnimationState.WALKING
+    }
+    
+    if (newState !== this.animData.currentState) {
+      this.setAnimationState(newState)
+    }
+  }
+  
+  /**
+   * Set animation state with transition
+   */
+  protected setAnimationState(newState: AnimalAnimationState): void {
+    if (newState === this.animData.currentState) return
+    
+    this.animData.previousState = this.animData.currentState
+    this.animData.currentState = newState
+    this.animData.stateTime = 0
+    this.animData.blendProgress = 0
+  }
+  
+  /**
+   * Update head tracking to look at player
+   * Feature: 022-animal-animation-system
+   */
+  private updateHeadTracking(deltaTime: number, playerPosition: THREE.Vector3): void {
+    if (!this.headMesh) return
+    
+    // Calculate direction to player
+    const toPlayer = new THREE.Vector3()
+      .subVectors(playerPosition, this.position)
+    
+    const distanceToPlayer = toPlayer.length()
+    
+    // Only track player if within reasonable distance
+    if (distanceToPlayer > 15) {
+      // Gradually return head to forward position
+      this.animData.headYaw = THREE.MathUtils.lerp(this.animData.headYaw, 0, deltaTime * 2)
+      this.animData.headPitch = THREE.MathUtils.lerp(this.animData.headPitch, 0, deltaTime * 2)
+    } else {
+      // Project to horizontal plane for yaw
+      const horizontalToPlayer = new THREE.Vector3(toPlayer.x, 0, toPlayer.z).normalize()
+      
+      // Calculate yaw (horizontal angle) relative to body rotation
+      let targetYaw = Math.atan2(horizontalToPlayer.x, horizontalToPlayer.z) - this.rotation
+      
+      // Normalize to -PI to PI
+      while (targetYaw > Math.PI) targetYaw -= Math.PI * 2
+      while (targetYaw < -Math.PI) targetYaw += Math.PI * 2
+      
+      // Clamp to limits
+      targetYaw = THREE.MathUtils.clamp(targetYaw, -HEAD_YAW_LIMIT, HEAD_YAW_LIMIT)
+      
+      // Calculate pitch (vertical angle)
+      const horizontalDist = Math.sqrt(toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z)
+      let targetPitch = Math.atan2(toPlayer.y - 0.5, horizontalDist) // Offset for head height
+      targetPitch = THREE.MathUtils.clamp(targetPitch, -HEAD_PITCH_LIMIT, HEAD_PITCH_LIMIT)
+      
+      // Smoothly interpolate
+      this.animData.headYaw = THREE.MathUtils.lerp(
+        this.animData.headYaw,
+        targetYaw,
+        deltaTime * HEAD_ROTATION_SPEED
+      )
+      this.animData.headPitch = THREE.MathUtils.lerp(
+        this.animData.headPitch,
+        targetPitch,
+        deltaTime * HEAD_ROTATION_SPEED
+      )
+    }
+    
+    // Apply rotation to head mesh
+    this.headMesh.rotation.y = this.animData.headYaw
+    this.headMesh.rotation.x = this.animData.headPitch
+  }
+  
+  /**
+   * Update death animation
+   * Feature: 022-animal-animation-system
+   */
+  private updateDeathAnimation(deltaTime: number): void {
+    if (this.deathAnimComplete) return
+    
+    this.deathAnimTimer += deltaTime
+    
+    // Calculate death animation progress
+    const progress = Math.min(this.deathAnimTimer / DEATH_ANIMATION_DURATION, 1)
+    
+    // Ease out for natural falling motion
+    const easedProgress = 1 - Math.pow(1 - progress, 2)
+    
+    // Tilt body to side (fall over)
+    this.animData.bodyTilt = easedProgress * (Math.PI / 2)
+    this.mesh.rotation.z = this.animData.bodyTilt
+    
+    // Slight drop as animal falls
+    const dropAmount = easedProgress * 0.3
+    this.mesh.position.y -= dropAmount * deltaTime * 2
+    
+    // Fade out at end
+    if (progress >= 1) {
+      this.deathAnimComplete = true
+      
+      // Wait a bit then notify for removal
+      setTimeout(() => {
+        // Trigger removal callback if set
+        if (this.onDeathCallback) {
+          // Already called in die(), this is just for cleanup timing
+        }
+      }, DEATH_REMOVAL_DELAY * 1000)
+    }
+  }
+  
+  /**
+   * Check if death animation is complete
+   */
+  isDeathAnimationComplete(): boolean {
+    return this.deathAnimComplete
   }
   
   /**
@@ -465,15 +657,89 @@ export abstract class Animal extends Entity implements IPhysicsBody {
   }
 
   /**
-   * Update animation (implemented by subclasses)
+   * Update animation (can be overridden by subclasses)
+   * Feature: 022-animal-animation-system - Enhanced with state-based animations
    */
   protected updateAnimation(deltaTime: number): void {
-    if (this.state === AnimalState.IDLE) {
-      // Slow idle animation
-      this.animationTime += deltaTime * 0.5
+    // Update animation time
+    const speedMultiplier = this.getAnimationSpeedMultiplier()
+    this.animationTime += deltaTime * speedMultiplier
+    
+    // Update blend progress
+    if (this.animData.blendProgress < 1) {
+      const config = getAnimationConfig(this.animData.currentState)
+      this.animData.blendProgress = Math.min(
+        this.animData.blendProgress + deltaTime / config.blendTime,
+        1
+      )
+    }
+    
+    // Update leg swing angle
+    this.animData.legSwingAngle = calculateLegSwing(
+      this.animData.currentState,
+      this.animationTime
+    )
+    
+    // Apply leg animations
+    this.applyLegAnimation()
+    
+    // Apply breathing animation for idle
+    this.applyBreathingAnimation()
+  }
+  
+  /**
+   * Get animation speed multiplier based on current state
+   */
+  private getAnimationSpeedMultiplier(): number {
+    switch (this.animData.currentState) {
+      case AnimalAnimationState.IDLE:
+        return 0.5
+      case AnimalAnimationState.WALKING:
+        return 2
+      case AnimalAnimationState.RUNNING:
+        return 3
+      case AnimalAnimationState.SWIMMING:
+        return 1.5
+      case AnimalAnimationState.HURT:
+        return 4
+      default:
+        return 1
+    }
+  }
+  
+  /**
+   * Apply leg swing animation
+   */
+  protected applyLegAnimation(): void {
+    if (this.legMeshes.length === 0) return
+    
+    const swing = this.animData.legSwingAngle
+    
+    // Standard 4-leg animation (front/back legs alternate)
+    if (this.legMeshes.length >= 4) {
+      if (this.legMeshes[0]) this.legMeshes[0].rotation.x = swing
+      if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -swing
+      if (this.legMeshes[2]) this.legMeshes[2].rotation.x = -swing
+      if (this.legMeshes[3]) this.legMeshes[3].rotation.x = swing
+    } else if (this.legMeshes.length >= 2) {
+      // 2-leg animation (like chicken)
+      if (this.legMeshes[0]) this.legMeshes[0].rotation.x = swing
+      if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -swing
+    }
+  }
+  
+  /**
+   * Apply breathing animation to body
+   */
+  protected applyBreathingAnimation(): void {
+    if (!this.bodyMesh) return
+    
+    if (this.animData.currentState === AnimalAnimationState.IDLE) {
+      const breathScale = calculateBreathingScale(this.animationTime)
+      this.bodyMesh.scale.set(breathScale, breathScale, breathScale)
     } else {
-      // Faster walking animation
-      this.animationTime += deltaTime * (this.state === AnimalState.FLEEING ? 3 : 2)
+      // Reset scale when not idle
+      this.bodyMesh.scale.set(1, 1, 1)
     }
   }
 
@@ -517,6 +783,9 @@ export abstract class Animal extends Entity implements IPhysicsBody {
     
     // Trigger damage flash
     this.startDamageFlash()
+    
+    // Trigger hurt animation (Feature: 022-animal-animation-system)
+    this.setAnimationState(AnimalAnimationState.HURT)
     
     // Check for death
     if (this._health <= 0) {
@@ -579,11 +848,17 @@ export abstract class Animal extends Entity implements IPhysicsBody {
 
   /**
    * Handle animal death
+   * Feature: 022-animal-animation-system - Added death animation
    */
   private die(): void {
     if (this._isDead) return
     
     this._isDead = true
+    
+    // Start death animation (Feature: 022-animal-animation-system)
+    this.setAnimationState(AnimalAnimationState.DYING)
+    this.deathAnimTimer = 0
+    this.deathAnimComplete = false
     
     // Get food drop type
     let foodType: string | null = null
@@ -594,7 +869,7 @@ export abstract class Animal extends Entity implements IPhysicsBody {
       }
     }
     
-    // Notify callback
+    // Notify callback (after animation starts)
     if (this.onDeathCallback) {
       this.onDeathCallback(this, this.position.clone(), foodType)
     }

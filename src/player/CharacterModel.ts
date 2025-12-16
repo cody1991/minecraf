@@ -26,6 +26,14 @@ export class CharacterModel {
   /** Animation time accumulator */
   private animationTime: number = 0
   
+  /** Attack animation state */
+  private isAttacking: boolean = false
+  private attackTime: number = 0
+  private readonly ATTACK_DURATION = 0.25
+  
+  /** Eating animation state */
+  private _isEating: boolean = false
+  
   /** Initial head Y position (for animation offset) */
   private initialHeadY: number = 0
   
@@ -68,10 +76,46 @@ export class CharacterModel {
    * Play an animation
    */
   playAnimation(name: CharacterAnimation): void {
+    if (name === 'attack') {
+      // Attack can interrupt other animations
+      this.isAttacking = true
+      this.attackTime = 0
+      return
+    }
+    
     if (this.currentAnimation !== name) {
       this.currentAnimation = name
       this.animationTime = 0
     }
+  }
+  
+  /**
+   * Trigger attack animation (for digging/hitting)
+   */
+  triggerAttack(): void {
+    this.isAttacking = true
+    this.attackTime = 0
+  }
+  
+  /**
+   * Start eating animation
+   */
+  startEating(): void {
+    this._isEating = true
+  }
+  
+  /**
+   * Stop eating animation
+   */
+  stopEating(): void {
+    this._isEating = false
+  }
+  
+  /**
+   * Check if currently eating
+   */
+  isEating(): boolean {
+    return this._isEating
   }
   
   /**
@@ -80,6 +124,15 @@ export class CharacterModel {
   updateAnimation(deltaTime: number, isMoving: boolean): void {
     this.animationTime += deltaTime
     
+    // Update attack animation
+    if (this.isAttacking) {
+      this.attackTime += deltaTime
+      if (this.attackTime >= this.ATTACK_DURATION) {
+        this.isAttacking = false
+        this.attackTime = 0
+      }
+    }
+    
     // Auto-switch animation based on movement
     if (isMoving && this.currentAnimation === 'idle') {
       this.currentAnimation = 'walk'
@@ -87,7 +140,7 @@ export class CharacterModel {
       this.currentAnimation = 'idle'
     }
     
-    // Apply animation
+    // Apply base animation first
     switch (this.currentAnimation) {
       case 'walk':
         this.applyWalkAnimation()
@@ -99,6 +152,16 @@ export class CharacterModel {
       default:
         this.applyIdleAnimation()
         break
+    }
+    
+    // Overlay attack animation on right arm
+    if (this.isAttacking) {
+      this.applyAttackAnimation()
+    }
+    
+    // Overlay eating animation on right arm
+    if (this._isEating && !this.isAttacking) {
+      this.applyEatingAnimation()
     }
   }
   
@@ -140,6 +203,39 @@ export class CharacterModel {
     this.parts.rightArm.rotation.x = -Math.PI * 0.5
     this.parts.leftLeg.rotation.x = 0.2
     this.parts.rightLeg.rotation.x = 0.2
+  }
+  
+  /**
+   * Apply attack animation (right arm swing down)
+   */
+  private applyAttackAnimation(): void {
+    const t = this.attackTime / this.ATTACK_DURATION
+    
+    let swingAngle: number
+    if (t < 0.4) {
+      // Swing down phase (0 to -90 degrees)
+      swingAngle = -Math.PI * 0.6 * (t / 0.4)
+    } else {
+      // Return phase (-90 to 0 degrees)
+      const returnT = (t - 0.4) / 0.6
+      swingAngle = -Math.PI * 0.6 * (1 - returnT)
+    }
+    
+    // Override right arm rotation
+    this.parts.rightArm.rotation.x = swingAngle
+  }
+  
+  /**
+   * Apply eating animation (right arm raised to mouth with bobbing)
+   */
+  private applyEatingAnimation(): void {
+    // Eating motion: raise arm toward mouth with small bobbing
+    const cycle = Math.sin(this.animationTime * 12) // Fast bobbing
+    
+    // Arm raised toward mouth (-90 degrees) with small bob
+    this.parts.rightArm.rotation.x = -Math.PI * 0.5 + cycle * 0.15
+    // Slight rotation toward center
+    this.parts.rightArm.rotation.z = 0.3
   }
   
   /**

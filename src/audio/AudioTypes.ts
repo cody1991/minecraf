@@ -99,8 +99,9 @@ export type BlockSoundCategory = 'stone' | 'wood' | 'dirt' | 'sand' | 'glass' | 
 /**
  * Block sound action type
  * Feature: 017-block-sound-effects
+ * Feature: 023-digging-system - Added 'dig' action
  */
-export type BlockSoundAction = 'place' | 'break'
+export type BlockSoundAction = 'place' | 'break' | 'dig'
 
 /**
  * Block sound synthesis parameters

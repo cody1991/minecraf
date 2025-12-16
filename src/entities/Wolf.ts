@@ -1,19 +1,18 @@
 /**
  * Wolf - Wolf animal entity
  * Feature: 009-ecosystem-flora-fauna
+ * Feature: 022-animal-animation-system - Enhanced animations
  */
 
 import * as THREE from 'three'
 import { Animal } from './Animal'
 import { AnimalType } from './AnimalTypes'
+import { AnimalAnimationState } from '../animation/AnimationState'
 
 /**
  * Wolf animal - gray, medium-sized, passive behavior
  */
 export class Wolf extends Animal {
-  private bodyMesh!: THREE.Mesh
-  private headMesh!: THREE.Mesh
-  private legMeshes: THREE.Mesh[] = []
   private tailMesh!: THREE.Mesh
 
   constructor(x: number, y: number, z: number) {
@@ -116,35 +115,18 @@ export class Wolf extends Animal {
   protected updateAnimation(deltaTime: number): void {
     super.updateAnimation(deltaTime)
     
-    // Animate legs when moving
-    if (this.state !== 0) { // Not IDLE
-      const legSwing = Math.sin(this.animationTime * 8) * 0.35
+    // Tail animation based on state
+    if (this.tailMesh) {
+      const isMoving = this.animData.currentState === AnimalAnimationState.WALKING ||
+                       this.animData.currentState === AnimalAnimationState.RUNNING
       
-      // Opposite leg pairs move together
-      if (this.legMeshes[0]) this.legMeshes[0].rotation.x = legSwing
-      if (this.legMeshes[1]) this.legMeshes[1].rotation.x = -legSwing
-      if (this.legMeshes[2]) this.legMeshes[2].rotation.x = -legSwing
-      if (this.legMeshes[3]) this.legMeshes[3].rotation.x = legSwing
-
-      // Tail wag when moving
-      if (this.tailMesh) {
+      if (isMoving) {
+        // Tail wag when moving
         this.tailMesh.rotation.y = Math.sin(this.animationTime * 6) * 0.3
-      }
-    } else {
-      // Reset leg rotation when idle
-      for (const leg of this.legMeshes) {
-        leg.rotation.x = 0
-      }
-      
-      // Slow tail wag when idle
-      if (this.tailMesh) {
+      } else {
+        // Slow tail wag when idle
         this.tailMesh.rotation.y = Math.sin(this.animationTime * 2) * 0.15
       }
-    }
-
-    // Subtle head movement
-    if (this.headMesh) {
-      this.headMesh.rotation.x = Math.sin(this.animationTime * 1.5) * 0.03
     }
   }
 }
