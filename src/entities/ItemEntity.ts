@@ -328,6 +328,14 @@ export class ItemEntity extends Entity {
   }
 
   /**
+   * Reset destruction flag (used when inventory is full)
+   * Feature: 021-food-system
+   */
+  resetDestruction(): void {
+    this.shouldBeDestroyed = false
+  }
+
+  /**
    * Get the 3D mesh
    */
   getMesh(): THREE.Object3D | null {

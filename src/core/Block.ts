@@ -49,7 +49,13 @@ export enum BlockType {
   MOSSY_STONE = 36,      // 城堡苔藓石头
   TORCH = 37,            // 火把照明
   // Survival mechanics blocks (020-survival-mechanics)
-  LAVA = 38              // 岩浆
+  LAVA = 38,             // 岩浆
+  // Food items (021-food-system)
+  RAW_BEEF = 50,
+  RAW_PORKCHOP = 51,
+  RAW_MUTTON = 52,
+  RAW_CHICKEN = 53,
+  RAW_RABBIT = 54
 }
 
 /**
@@ -111,7 +117,13 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.MOSSY_STONE]: '苔藓石头',
   [BlockType.TORCH]: '火把',
   // Survival mechanics blocks (020-survival-mechanics)
-  [BlockType.LAVA]: '岩浆'
+  [BlockType.LAVA]: '岩浆',
+  // Food items (021-food-system)
+  [BlockType.RAW_BEEF]: '生牛肉',
+  [BlockType.RAW_PORKCHOP]: '生猪排',
+  [BlockType.RAW_MUTTON]: '生羊肉',
+  [BlockType.RAW_CHICKEN]: '生鸡肉',
+  [BlockType.RAW_RABBIT]: '生兔肉'
 }
 
 /**
@@ -161,7 +173,13 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.MOSSY_STONE]: 0x5a6b4a,
   [BlockType.TORCH]: 0xffcc00,
   // Survival mechanics blocks (020-survival-mechanics)
-  [BlockType.LAVA]: 0xff4500
+  [BlockType.LAVA]: 0xff4500,
+  // Food items (021-food-system)
+  [BlockType.RAW_BEEF]: 0xc41e3a,    // 红色肉块
+  [BlockType.RAW_PORKCHOP]: 0xffb6c1, // 粉红色
+  [BlockType.RAW_MUTTON]: 0x8b0000,   // 深红色
+  [BlockType.RAW_CHICKEN]: 0xffdab9,  // 浅粉色
+  [BlockType.RAW_RABBIT]: 0xd2b48c    // 浅棕色
 }
 
 /**
@@ -483,6 +501,47 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     color: 0xff4500,
     transparent: true,
     opacity: 0.9,
+    solid: false
+  },
+  // Food items (021-food-system)
+  [BlockType.RAW_BEEF]: {
+    name: '生牛肉',
+    nameEn: 'Raw Beef',
+    color: 0xc41e3a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.RAW_PORKCHOP]: {
+    name: '生猪排',
+    nameEn: 'Raw Porkchop',
+    color: 0xffb6c1,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.RAW_MUTTON]: {
+    name: '生羊肉',
+    nameEn: 'Raw Mutton',
+    color: 0x8b0000,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.RAW_CHICKEN]: {
+    name: '生鸡肉',
+    nameEn: 'Raw Chicken',
+    color: 0xffdab9,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.RAW_RABBIT]: {
+    name: '生兔肉',
+    nameEn: 'Raw Rabbit',
+    color: 0xd2b48c,
+    transparent: false,
+    opacity: 1,
     solid: false
   }
 }

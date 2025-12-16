@@ -562,6 +562,214 @@ export class AudioManager {
   }
 
   /**
+   * Play attack hit sound
+   * Feature: 021-food-system
+   */
+  playAttackSound(x?: number, y?: number, z?: number): void {
+    if (!this.audioContext || !this.sfxGain) return
+    if (this.settings.muted) return
+
+    // Get or generate the attack sound buffer
+    const cacheKey = 'attack_sound'
+    let buffer = this.blockSoundCache.get(cacheKey)
+    
+    if (!buffer) {
+      buffer = this.generateAttackSound()
+      if (buffer) {
+        this.blockSoundCache.set(cacheKey, buffer)
+      }
+    }
+
+    if (!buffer) return
+
+    // Create audio nodes
+    const source = this.audioContext.createBufferSource()
+    source.buffer = buffer
+    source.playbackRate.value = 0.9 + Math.random() * 0.2
+
+    const gainNode = this.audioContext.createGain()
+    gainNode.gain.value = 0.7
+
+    // Use 3D positioning if coordinates provided
+    if (x !== undefined && y !== undefined && z !== undefined) {
+      const panner = this.audioContext.createPanner()
+      panner.distanceModel = 'inverse'
+      panner.refDistance = 1
+      panner.maxDistance = 30
+      panner.rolloffFactor = 1
+      panner.positionX.value = x
+      panner.positionY.value = y
+      panner.positionZ.value = z
+
+      source.connect(panner)
+      panner.connect(gainNode)
+    } else {
+      source.connect(gainNode)
+    }
+
+    gainNode.connect(this.sfxGain)
+    source.start()
+
+    const instance = new SoundInstance(source, gainNode)
+    const id = `attack_${this.soundIdCounter++}`
+    this.activeSounds.set(id, instance)
+
+    source.onended = () => {
+      this.activeSounds.delete(id)
+    }
+  }
+
+  /**
+   * Play eating sound (chewing)
+   * Feature: 021-food-system
+   */
+  playEatingSound(): void {
+    if (!this.audioContext || !this.sfxGain) return
+    if (this.settings.muted) return
+
+    const cacheKey = 'eating_sound'
+    let buffer = this.blockSoundCache.get(cacheKey)
+    
+    if (!buffer) {
+      buffer = this.generateEatingSound()
+      if (buffer) {
+        this.blockSoundCache.set(cacheKey, buffer)
+      }
+    }
+
+    if (!buffer) return
+
+    const source = this.audioContext.createBufferSource()
+    source.buffer = buffer
+    source.playbackRate.value = 0.8 + Math.random() * 0.4
+
+    const gainNode = this.audioContext.createGain()
+    gainNode.gain.value = 0.5
+
+    source.connect(gainNode)
+    gainNode.connect(this.sfxGain)
+    source.start()
+
+    const instance = new SoundInstance(source, gainNode)
+    const id = `eating_${this.soundIdCounter++}`
+    this.activeSounds.set(id, instance)
+
+    source.onended = () => {
+      this.activeSounds.delete(id)
+    }
+  }
+
+  /**
+   * Play eating complete sound (swallow)
+   * Feature: 021-food-system
+   */
+  playEatingCompleteSound(): void {
+    if (!this.audioContext || !this.sfxGain) return
+    if (this.settings.muted) return
+
+    const cacheKey = 'eating_complete_sound'
+    let buffer = this.blockSoundCache.get(cacheKey)
+    
+    if (!buffer) {
+      buffer = this.generateEatingCompleteSound()
+      if (buffer) {
+        this.blockSoundCache.set(cacheKey, buffer)
+      }
+    }
+
+    if (!buffer) return
+
+    const source = this.audioContext.createBufferSource()
+    source.buffer = buffer
+
+    const gainNode = this.audioContext.createGain()
+    gainNode.gain.value = 0.6
+
+    source.connect(gainNode)
+    gainNode.connect(this.sfxGain)
+    source.start()
+
+    const instance = new SoundInstance(source, gainNode)
+    const id = `eating_complete_${this.soundIdCounter++}`
+    this.activeSounds.set(id, instance)
+
+    source.onended = () => {
+      this.activeSounds.delete(id)
+    }
+  }
+
+  /**
+   * Generate attack hit sound
+   */
+  private generateAttackSound(): AudioBuffer | undefined {
+    if (!this.audioContext) return undefined
+
+    const sampleRate = this.audioContext.sampleRate
+    const duration = 0.15
+    const samples = Math.floor(sampleRate * duration)
+    const buffer = this.audioContext.createBuffer(1, samples, sampleRate)
+    const data = buffer.getChannelData(0)
+
+    for (let i = 0; i < samples; i++) {
+      const t = i / sampleRate
+      const envelope = Math.exp(-t * 30)
+      // Low frequency thump with noise
+      const noise = (Math.random() * 2 - 1) * 0.3
+      const tone = Math.sin(2 * Math.PI * 100 * t) * 0.7
+      data[i] = (noise + tone) * envelope
+    }
+
+    return buffer
+  }
+
+  /**
+   * Generate eating (chewing) sound
+   */
+  private generateEatingSound(): AudioBuffer | undefined {
+    if (!this.audioContext) return undefined
+
+    const sampleRate = this.audioContext.sampleRate
+    const duration = 0.1
+    const samples = Math.floor(sampleRate * duration)
+    const buffer = this.audioContext.createBuffer(1, samples, sampleRate)
+    const data = buffer.getChannelData(0)
+
+    for (let i = 0; i < samples; i++) {
+      const t = i / sampleRate
+      const envelope = Math.sin(Math.PI * t / duration) * Math.exp(-t * 10)
+      // Crunchy noise
+      const noise = (Math.random() * 2 - 1)
+      data[i] = noise * envelope * 0.4
+    }
+
+    return buffer
+  }
+
+  /**
+   * Generate eating complete (swallow) sound
+   */
+  private generateEatingCompleteSound(): AudioBuffer | undefined {
+    if (!this.audioContext) return undefined
+
+    const sampleRate = this.audioContext.sampleRate
+    const duration = 0.2
+    const samples = Math.floor(sampleRate * duration)
+    const buffer = this.audioContext.createBuffer(1, samples, sampleRate)
+    const data = buffer.getChannelData(0)
+
+    for (let i = 0; i < samples; i++) {
+      const t = i / sampleRate
+      const envelope = Math.exp(-t * 15)
+      // Descending tone (gulp sound)
+      const freq = 400 - t * 1000
+      const tone = Math.sin(2 * Math.PI * freq * t)
+      data[i] = tone * envelope * 0.5
+    }
+
+    return buffer
+  }
+
+  /**
    * Update listener position for 3D audio
    */
   updateListenerPosition(x: number, y: number, z: number, forwardX: number, forwardZ: number): void {

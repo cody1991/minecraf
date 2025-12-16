@@ -39,35 +39,35 @@ export const FOOD_ITEMS: Record<FoodType, FoodItem> = {
     name: '生牛肉',
     nameEn: 'Raw Beef',
     hungerRestore: 3,
-    blockType: BlockType.DIRT // Placeholder - will use item system
+    blockType: BlockType.RAW_BEEF
   },
   [FoodType.RAW_PORKCHOP]: {
     type: FoodType.RAW_PORKCHOP,
     name: '生猪排',
     nameEn: 'Raw Porkchop',
     hungerRestore: 3,
-    blockType: BlockType.DIRT
+    blockType: BlockType.RAW_PORKCHOP
   },
   [FoodType.RAW_MUTTON]: {
     type: FoodType.RAW_MUTTON,
     name: '生羊肉',
     nameEn: 'Raw Mutton',
     hungerRestore: 2,
-    blockType: BlockType.DIRT
+    blockType: BlockType.RAW_MUTTON
   },
   [FoodType.RAW_CHICKEN]: {
     type: FoodType.RAW_CHICKEN,
     name: '生鸡肉',
     nameEn: 'Raw Chicken',
     hungerRestore: 2,
-    blockType: BlockType.DIRT
+    blockType: BlockType.RAW_CHICKEN
   },
   [FoodType.RAW_RABBIT]: {
     type: FoodType.RAW_RABBIT,
     name: '生兔肉',
     nameEn: 'Raw Rabbit',
     hungerRestore: 3,
-    blockType: BlockType.DIRT
+    blockType: BlockType.RAW_RABBIT
   }
 }
 
@@ -102,17 +102,48 @@ export class FoodRegistry {
   }
 
   /**
-   * Check if a block type is a food item
+   * Get BlockType for a FoodType (Feature: 021-food-system)
+   */
+  static getBlockTypeForFood(foodType: FoodType): BlockType | null {
+    const food = FOOD_ITEMS[foodType]
+    return food?.blockType ?? null
+  }
+
+  /**
+   * Check if a block type is a food item (Feature: 021-food-system)
+   */
+  static isFoodBlock(blockType: BlockType): boolean {
+    return blockType === BlockType.RAW_BEEF ||
+           blockType === BlockType.RAW_PORKCHOP ||
+           blockType === BlockType.RAW_MUTTON ||
+           blockType === BlockType.RAW_CHICKEN ||
+           blockType === BlockType.RAW_RABBIT
+  }
+
+  /**
+   * Check if a block type is a food item (legacy method)
    */
   static isFood(blockType: BlockType): boolean {
-    return Object.values(FOOD_ITEMS).some(food => food.blockType === blockType)
+    return FoodRegistry.isFoodBlock(blockType)
+  }
+
+  /**
+   * Get FoodItem from BlockType (Feature: 021-food-system)
+   */
+  static getFoodFromBlockType(blockType: BlockType): FoodItem | null {
+    for (const food of Object.values(FOOD_ITEMS)) {
+      if (food.blockType === blockType) {
+        return food
+      }
+    }
+    return null
   }
 
   /**
    * Get hunger restoration for a food block type
    */
   static getHungerRestore(blockType: BlockType): number {
-    const food = Object.values(FOOD_ITEMS).find(f => f.blockType === blockType)
+    const food = FoodRegistry.getFoodFromBlockType(blockType)
     return food?.hungerRestore ?? 0
   }
 

@@ -129,6 +129,9 @@ export class TextureAtlas {
     this.generateDarkStoneTexture(ctx, TextureIndex.DARK_STONE, 0)
     this.generateMossyStoneTexture(ctx, TextureIndex.MOSSY_STONE, 0)
     this.generateTorchTexture(ctx, TextureIndex.TORCH, 0)
+    // Food items (021-food-system)
+    this.generateRawBeefTexture(ctx, TextureIndex.RAW_BEEF, 0)
+    this.generateRawPorkchopTexture(ctx, TextureIndex.RAW_PORKCHOP, 0)
 
     const texture = new THREE.CanvasTexture(this.canvas)
     texture.magFilter = THREE.NearestFilter
@@ -649,6 +652,72 @@ export class TextureAtlas {
     ctx.beginPath()
     ctx.ellipse(cx, cy - 4, 1, 2, 0, 0, Math.PI * 2)
     ctx.fill()
+  }
+
+  /**
+   * Generate raw beef texture (021-food-system)
+   */
+  private generateRawBeefTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base red meat color
+    ctx.fillStyle = '#c41e3a'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add meat variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 30
+        const r = Math.max(0, Math.min(255, 196 + noise))
+        const g = Math.max(0, Math.min(255, 30 + noise * 0.5))
+        const b = Math.max(0, Math.min(255, 58 + noise * 0.5))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Add white fat marbling
+    for (let i = 0; i < 8; i++) {
+      const fx = x + 2 + Math.floor(Math.random() * (tileSize - 4))
+      const fy = y + 2 + Math.floor(Math.random() * (tileSize - 4))
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+      ctx.fillRect(fx, fy, 2, 1)
+    }
+  }
+
+  /**
+   * Generate raw porkchop texture (021-food-system)
+   */
+  private generateRawPorkchopTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base pink meat color
+    ctx.fillStyle = '#ffb6c1'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add meat variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const r = Math.max(0, Math.min(255, 255 + noise * 0.3))
+        const g = Math.max(0, Math.min(255, 182 + noise))
+        const b = Math.max(0, Math.min(255, 193 + noise))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Add bone (white strip)
+    ctx.fillStyle = '#f5f5dc'
+    ctx.fillRect(x + tileSize - 4, y + 4, 3, tileSize - 8)
+
+    // Bone detail
+    ctx.fillStyle = '#d4d4aa'
+    ctx.fillRect(x + tileSize - 3, y + 4, 1, tileSize - 8)
   }
 
   /**

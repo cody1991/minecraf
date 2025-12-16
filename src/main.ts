@@ -23,6 +23,12 @@ import { SaveManager } from './storage/SaveManager'
 import { SavePanel } from './ui/SavePanel'
 import { AutoSave } from './storage/AutoSave'
 import { SurvivalManager } from './survival/SurvivalManager'
+import { CombatSystem } from './combat/CombatSystem'
+import { EatingSystem } from './survival/EatingSystem'
+import { EatingProgressUI } from './ui/EatingProgressUI'
+import { FoodRegistry } from './survival/FoodRegistry'
+import { ItemEntity } from './entities/ItemEntity'
+import { Animal } from './entities/Animal'
 
 /**
  * WebCraft - Web 版我的世界
@@ -115,6 +121,70 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize survival UI
   survivalManager.initialize()
+
+  // ============================================================================
+  // Combat System Setup (Feature: 021-food-system)
+  // ============================================================================
+  
+  // Create combat system
+  const combatSystem = new CombatSystem(game.getEntityManager())
+  
+  // Set up animal death callback to drop food
+  const setupAnimalDeathCallback = () => {
+    const entities = game.getEntityManager().getAll()
+    for (const entity of entities) {
+      if (entity instanceof Animal && !entity.isDead) {
+        entity.setOnDeath((animal, position, foodType) => {
+          if (foodType) {
+            // Get the BlockType for this food
+            const blockType = FoodRegistry.getBlockTypeForFood(foodType as import('./survival/FoodRegistry').FoodType)
+            if (blockType) {
+              // Create food item entity at death position
+              const foodItem = new ItemEntity(
+                position.x,
+                position.y + 0.5,
+                position.z,
+                blockType,
+                1
+              )
+              game.addItemEntity(foodItem)
+              console.log(`[Combat] Animal dropped: ${foodType}`)
+            }
+          }
+          // Remove dead animal from entity manager
+          game.getEntityManager().remove(animal.id)
+        })
+      }
+    }
+  }
+  
+  // ============================================================================
+  // Eating System Setup (Feature: 021-food-system)
+  // ============================================================================
+  
+  // Create eating system
+  const eatingSystem = new EatingSystem(player.inventory, player.stats)
+  
+  // Create eating progress UI
+  const eatingProgressUI = new EatingProgressUI()
+  document.body.appendChild(eatingProgressUI.getElement())
+  
+  // Set eating callbacks
+  eatingSystem.setCallbacks({
+    onEatingStart: () => {
+      eatingProgressUI.show()
+    },
+    onEatingProgress: (progress) => {
+      eatingProgressUI.setProgress(progress)
+    },
+    onEatingComplete: (_foodType, hungerRestored) => {
+      eatingProgressUI.hide()
+      console.log(`[Eating] Restored ${hungerRestored} hunger`)
+    },
+    onEatingCancel: () => {
+      eatingProgressUI.hide()
+    }
+  })
 
   // Create input manager
   const inputManager = new InputManager(game.getRenderer().getDomElement())
@@ -312,6 +382,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update survival system (Feature: 020-survival-mechanics)
     survivalManager.update(deltaTime)
     
+    // Update combat system (Feature: 021-food-system)
+    combatSystem.update(deltaTime)
+    
+    // Set up death callbacks for newly spawned animals
+    setupAnimalDeathCallback()
+    
     // Skip other updates if player is dead
     if (survivalManager.isPlayerDead()) {
       return
@@ -358,15 +434,35 @@ document.addEventListener('DOMContentLoaded', () => {
         hotbarUI.selectNext()
       }
 
-      // Handle block destruction (left click)
+      // Handle block destruction (left click) - with combat priority (Feature: 021-food-system)
       if (input.leftClick) {
-        blockInteraction.destroyBlock()
+        // Try to attack animal first
+        const eyePos = player.getEyePosition()
+        const lookDir = player.getLookDirection()
+        const combatResult = combatSystem.attack(eyePos, lookDir)
+        
+        // If no animal hit, try to destroy block
+        if (!combatResult.hit) {
+          blockInteraction.destroyBlock()
+        }
       }
 
-      // Handle block placement (right click)
+      // Handle block placement / eating (right click) - Feature: 021-food-system
       if (input.rightClick) {
-        blockInteraction.placeBlock()
+        // Check if holding food and can eat
+        if (eatingSystem.canEat()) {
+          // Start eating if not already eating
+          if (!eatingSystem.isEating()) {
+            eatingSystem.startEating(player.position)
+          }
+        } else {
+          // Not holding food, place block
+          blockInteraction.placeBlock()
+        }
       }
+      
+      // Update eating system (Feature: 021-food-system)
+      eatingSystem.update(deltaTime, player.position, input.rightMouseDown)
 
       // Handle inventory toggle (E key) - Feature: 019-inventory-system
       if (input.inventoryToggle) {

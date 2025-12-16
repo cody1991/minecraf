@@ -22,7 +22,7 @@ import { FishSpawner } from '../entities/FishSpawner'
 import { SkyRenderer } from '../weather/SkyRenderer'
 import { WeatherSystem } from '../weather/WeatherSystem'
 import { RainEffect } from '../weather/RainEffect'
-import { ItemEntity } from '../entities/ItemEntity'
+import { ItemEntity, ItemEntityState } from '../entities/ItemEntity'
 import { AudioManager } from '../audio/AudioManager'
 import { MAX_ITEM_ENTITIES } from '../player/InventoryConstants'
 
@@ -427,41 +427,54 @@ export class Game {
 
   /**
    * Update all item entities and check for pickup
+   * Fixed: Items no longer destroyed when inventory is full (Feature: 021-food-system)
    */
   private updateItemEntities(deltaTime: number): void {
     if (!this.player) return
 
     const playerPos = this.playerPosition
     const itemsToRemove: string[] = []
-    const itemsToPickup: ItemEntity[] = []
 
     // Update each item entity
     for (const [id, item] of this.itemEntities) {
       item.update(deltaTime, playerPos, this.world)
 
-      // Check if should be destroyed
+      // Check if should be destroyed (despawn timeout or reached player)
       if (item.shouldDestroy()) {
-        itemsToRemove.push(id)
-        
         // Check if item was picked up (close to player)
         const distance = item.position.distanceTo(playerPos)
         if (distance < 0.5) {
-          itemsToPickup.push(item)
+          // Try to add to inventory
+          const added = this.player.inventory.addItem(item.itemType, item.count)
+          
+          if (added > 0) {
+            // Successfully picked up (at least partially)
+            item.count -= added
+            
+            // Play pickup sound
+            AudioManager.getInstance().playPickupSound(
+              item.position.x,
+              item.position.y,
+              item.position.z
+            )
+            
+            // Only remove if all items were picked up
+            if (item.count <= 0) {
+              itemsToRemove.push(id)
+            } else {
+              // Still has items, reset to resting state
+              item.state = ItemEntityState.Resting
+              item.resetDestruction()
+            }
+          } else {
+            // Inventory full, don't destroy - reset to resting state
+            item.state = ItemEntityState.Resting
+            item.resetDestruction()
+          }
+        } else {
+          // Not near player, remove (despawn timeout)
+          itemsToRemove.push(id)
         }
-      }
-    }
-
-    // Process pickups
-    for (const item of itemsToPickup) {
-      const added = this.player.inventory.addItem(item.itemType, item.count)
-      
-      if (added > 0) {
-        // Play pickup sound
-        AudioManager.getInstance().playPickupSound(
-          item.position.x,
-          item.position.y,
-          item.position.z
-        )
       }
     }
 

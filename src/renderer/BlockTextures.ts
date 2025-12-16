@@ -55,6 +55,9 @@ export const TextureIndex = {
   DARK_STONE: 19,
   MOSSY_STONE: 20,
   TORCH: 21,
+  // Food items (021-food-system)
+  RAW_BEEF: 22,
+  RAW_PORKCHOP: 23,
 } as const
 
 /**
@@ -194,6 +197,32 @@ export const BLOCK_TEXTURE_MAPS: Partial<Record<BlockType, BlockTextureMap>> = {
     top: TextureIndex.TORCH,
     bottom: TextureIndex.TORCH,
     side: TextureIndex.TORCH
+  },
+  // Food items (021-food-system)
+  [BlockType.RAW_BEEF]: {
+    top: TextureIndex.RAW_BEEF,
+    bottom: TextureIndex.RAW_BEEF,
+    side: TextureIndex.RAW_BEEF
+  },
+  [BlockType.RAW_PORKCHOP]: {
+    top: TextureIndex.RAW_PORKCHOP,
+    bottom: TextureIndex.RAW_PORKCHOP,
+    side: TextureIndex.RAW_PORKCHOP
+  },
+  [BlockType.RAW_MUTTON]: {
+    top: TextureIndex.RAW_BEEF,  // Reuse beef texture
+    bottom: TextureIndex.RAW_BEEF,
+    side: TextureIndex.RAW_BEEF
+  },
+  [BlockType.RAW_CHICKEN]: {
+    top: TextureIndex.RAW_PORKCHOP,  // Reuse porkchop texture
+    bottom: TextureIndex.RAW_PORKCHOP,
+    side: TextureIndex.RAW_PORKCHOP
+  },
+  [BlockType.RAW_RABBIT]: {
+    top: TextureIndex.RAW_BEEF,  // Reuse beef texture
+    bottom: TextureIndex.RAW_BEEF,
+    side: TextureIndex.RAW_BEEF
   }
 }
 

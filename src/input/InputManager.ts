@@ -28,6 +28,9 @@ export interface InputState {
   // Mouse buttons (true only on the frame they were clicked)
   leftClick: boolean
   rightClick: boolean
+  
+  // Right mouse button held state (Feature: 021-food-system)
+  rightMouseDown: boolean
 
   // Number keys for block selection (1-9, 0)
   // Returns index 0-9 where 1->0, 2->1, ..., 9->8, 0->9
@@ -79,6 +82,7 @@ export class InputManager {
       mouseY: this.mouseInput.getMouseDeltaY(),
       leftClick: this.mouseInput.wasLeftClicked(),
       rightClick: this.mouseInput.wasRightClicked(),
+      rightMouseDown: this.mouseInput.isRightMouseDown(),
       numberKey: this.keyboardInput.getNumberKeyPressed(),
       tabCycle: this.keyboardInput.wasTabPressed(),
       mapToggle: this.keyboardInput.wasMapKeyPressed(),
