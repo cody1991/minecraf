@@ -2,6 +2,7 @@
  * Animal - Base class for all animals
  * Feature: 008-biome-weather-system
  * Feature: 012-sound-map-system - Added animal sounds
+ * Feature: 020-survival-mechanics - Added health and combat
  */
 
 import * as THREE from 'three'
@@ -13,6 +14,7 @@ import { resolveXCollision, resolveYCollision, resolveZCollision, checkGrounded,
 import { applyGravity } from '../physics/Gravity'
 import { BlockType } from '../core/Block'
 import { AudioManager } from '../audio/AudioManager'
+import { FoodRegistry } from '../survival/FoodRegistry'
 
 /** Gravity constant for animals (positive value, applied as downward force) */
 const ANIMAL_GRAVITY = 20
@@ -28,6 +30,13 @@ const JUMP_COOLDOWN = 0.5
 const MIN_SOUND_INTERVAL = 5
 /** Maximum interval between animal sounds (seconds) */
 const MAX_SOUND_INTERVAL = 20
+/** Damage flash duration (seconds) */
+const DAMAGE_FLASH_DURATION = 0.2
+
+/**
+ * Callback for animal death event
+ */
+export type AnimalDeathCallback = (animal: Animal, position: THREE.Vector3, foodType: string | null) => void
 
 /**
  * Base class for all animals
@@ -69,6 +78,20 @@ export abstract class Animal extends Entity implements IPhysicsBody {
   /** Sound timer for ambient sounds */
   private soundTimer: number = 0
 
+  // Health system (Feature: 020-survival-mechanics)
+  /** Current health */
+  private _health: number = 10
+  /** Maximum health */
+  private _maxHealth: number = 10
+  /** Whether animal is dead */
+  private _isDead: boolean = false
+  /** Damage flash timer */
+  private damageFlashTimer: number = 0
+  /** Original materials for damage flash */
+  private originalMaterials: Map<THREE.Mesh, THREE.Material | THREE.Material[]> = new Map()
+  /** Death callback */
+  private onDeathCallback: AnimalDeathCallback | null = null
+
   constructor(type: AnimalType, x: number, y: number, z: number) {
     super(generateEntityId(), x, y, z)
     this.animalType = type
@@ -83,6 +106,10 @@ export abstract class Animal extends Entity implements IPhysicsBody {
     
     // Initialize sound timer with random offset
     this.soundTimer = MIN_SOUND_INTERVAL + Math.random() * (MAX_SOUND_INTERVAL - MIN_SOUND_INTERVAL)
+    
+    // Initialize health from config (Feature: 020-survival-mechanics)
+    this._maxHealth = this.config.maxHealth
+    this._health = this._maxHealth
   }
 
   /**
@@ -94,6 +121,12 @@ export abstract class Animal extends Entity implements IPhysicsBody {
    * Update animal state
    */
   update(deltaTime: number, playerPosition: THREE.Vector3, world?: ICollisionWorld): void {
+    // Skip update if dead
+    if (this._isDead) return
+    
+    // Update damage flash (Feature: 020-survival-mechanics)
+    this.updateDamageFlash(deltaTime)
+    
     // Update AI
     const aiResult = updateAnimalAI(
       this.state,
@@ -449,6 +482,132 @@ export abstract class Animal extends Entity implements IPhysicsBody {
    */
   getMesh(): THREE.Object3D {
     return this.mesh
+  }
+
+  // ============================================================================
+  // Health System (Feature: 020-survival-mechanics)
+  // ============================================================================
+
+  /** Get current health */
+  get health(): number { return this._health }
+  
+  /** Get maximum health */
+  get maxHealth(): number { return this._maxHealth }
+  
+  /** Check if dead */
+  get isDead(): boolean { return this._isDead }
+
+  /**
+   * Set death callback
+   */
+  setOnDeath(callback: AnimalDeathCallback): void {
+    this.onDeathCallback = callback
+  }
+
+  /**
+   * Take damage from an attack
+   * @param amount Damage amount
+   * @returns true if damage was applied
+   */
+  takeDamage(amount: number): boolean {
+    if (this._isDead) return false
+    if (amount <= 0) return false
+    
+    this._health = Math.max(0, this._health - amount)
+    
+    // Trigger damage flash
+    this.startDamageFlash()
+    
+    // Check for death
+    if (this._health <= 0) {
+      this.die()
+    }
+    
+    return true
+  }
+
+  /**
+   * Start damage flash effect
+   */
+  private startDamageFlash(): void {
+    this.damageFlashTimer = DAMAGE_FLASH_DURATION
+    
+    // Store original materials and apply red tint
+    this.mesh.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        if (!this.originalMaterials.has(child)) {
+          this.originalMaterials.set(child, child.material)
+        }
+        
+        // Create red flash material
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map(m => {
+            const flashMat = (m as THREE.MeshLambertMaterial).clone()
+            flashMat.color.setHex(0xff0000)
+            return flashMat
+          })
+        } else {
+          const flashMat = (child.material as THREE.MeshLambertMaterial).clone()
+          flashMat.color.setHex(0xff0000)
+          child.material = flashMat
+        }
+      }
+    })
+  }
+
+  /**
+   * Update damage flash effect
+   */
+  private updateDamageFlash(deltaTime: number): void {
+    if (this.damageFlashTimer <= 0) return
+    
+    this.damageFlashTimer -= deltaTime
+    
+    if (this.damageFlashTimer <= 0) {
+      // Restore original materials
+      this.mesh.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const original = this.originalMaterials.get(child)
+          if (original) {
+            child.material = original
+          }
+        }
+      })
+      this.originalMaterials.clear()
+    }
+  }
+
+  /**
+   * Handle animal death
+   */
+  private die(): void {
+    if (this._isDead) return
+    
+    this._isDead = true
+    
+    // Get food drop type
+    let foodType: string | null = null
+    if (this.config.dropsFood) {
+      const food = FoodRegistry.getFoodForAnimal(this.animalType)
+      if (food) {
+        foodType = food
+      }
+    }
+    
+    // Notify callback
+    if (this.onDeathCallback) {
+      this.onDeathCallback(this, this.position.clone(), foodType)
+    }
+  }
+
+  /**
+   * Set health directly (for loading from save)
+   */
+  setHealth(health: number): void {
+    this._health = Math.max(0, Math.min(this._maxHealth, health))
+    if (this._health <= 0) {
+      this._isDead = true
+    }
   }
 
   /**

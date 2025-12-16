@@ -1,3 +1,4 @@
+import * as THREE from 'three'
 import { Game } from './core/Game'
 import { Player } from './player/Player'
 import { Movement } from './player/Movement'
@@ -21,6 +22,7 @@ import { ViewMode } from './player/CharacterTypes'
 import { SaveManager } from './storage/SaveManager'
 import { SavePanel } from './ui/SavePanel'
 import { AutoSave } from './storage/AutoSave'
+import { SurvivalManager } from './survival/SurvivalManager'
 
 /**
  * WebCraft - Web 版我的世界
@@ -30,6 +32,7 @@ import { AutoSave } from './storage/AutoSave'
  * Feature: 013-character-model-view - Added character model and view switching
  * Feature: 018-world-save-system - Added save/load functionality
  * Feature: 019-inventory-system - Added inventory and hotbar
+ * Feature: 020-survival-mechanics - Added survival system
  */
 
 // Wait for DOM to be ready
@@ -92,6 +95,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Create movement controller
   const movement = new Movement(player, game.getWorld())
+
+  // ============================================================================
+  // Survival System Setup (Feature: 020-survival-mechanics)
+  // ============================================================================
+  
+  // Create survival manager
+  const survivalManager = new SurvivalManager({
+    player,
+    world: game.getWorld(),
+    spawnPosition: new THREE.Vector3(spawn.x, spawn.y, spawn.z),
+    onRespawn: () => {
+      // Update camera after respawn
+      cameraController.update(0)
+      // Re-request pointer lock
+      inputManager.requestPointerLock()
+    }
+  })
+  
+  // Initialize survival UI
+  survivalManager.initialize()
 
   // Create input manager
   const inputManager = new InputManager(game.getRenderer().getDomElement())
@@ -286,6 +309,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Set up game update callback
   game.setUpdateCallback((deltaTime) => {
+    // Update survival system (Feature: 020-survival-mechanics)
+    survivalManager.update(deltaTime)
+    
+    // Skip other updates if player is dead
+    if (survivalManager.isPlayerDead()) {
+      return
+    }
+    
     // Update coordinate display
     coordinateDisplay.update(player.position.x, player.position.y, player.position.z)
     

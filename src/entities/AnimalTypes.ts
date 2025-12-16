@@ -1,6 +1,7 @@
 /**
  * Animal Types and States
  * Feature: 008-biome-weather-system
+ * Feature: 020-survival-mechanics - Added health and food drop config
  */
 
 /**
@@ -41,6 +42,9 @@ export interface AnimalConfig {
   wanderTimeMax: number   // Maximum wander time (seconds)
   fleeDistance: number    // Distance to trigger flee (blocks)
   safeDistance: number    // Distance to stop fleeing (blocks)
+  // Survival mechanics (Feature: 020-survival-mechanics)
+  maxHealth: number       // Maximum health points
+  dropsFood: boolean      // Whether animal drops food when killed
 }
 
 /**
@@ -58,7 +62,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 3,
     wanderTimeMax: 8,
     fleeDistance: 5,
-    safeDistance: 10
+    safeDistance: 10,
+    maxHealth: 10,
+    dropsFood: true
   },
   [AnimalType.SHEEP]: {
     type: AnimalType.SHEEP,
@@ -71,7 +77,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 3,
     wanderTimeMax: 8,
     fleeDistance: 5,
-    safeDistance: 10
+    safeDistance: 10,
+    maxHealth: 10,
+    dropsFood: true
   },
   [AnimalType.PIG]: {
     type: AnimalType.PIG,
@@ -84,7 +92,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 3,
     wanderTimeMax: 8,
     fleeDistance: 5,
-    safeDistance: 10
+    safeDistance: 10,
+    maxHealth: 10,
+    dropsFood: true
   },
   [AnimalType.CHICKEN]: {
     type: AnimalType.CHICKEN,
@@ -97,7 +107,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 2,
     wanderTimeMax: 6,
     fleeDistance: 4,
-    safeDistance: 8
+    safeDistance: 8,
+    maxHealth: 4,
+    dropsFood: true
   },
   // New animals (009-ecosystem-flora-fauna)
   [AnimalType.RABBIT]: {
@@ -111,7 +123,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 2,
     wanderTimeMax: 5,
     fleeDistance: 5,
-    safeDistance: 10
+    safeDistance: 10,
+    maxHealth: 4,
+    dropsFood: true
   },
   [AnimalType.WOLF]: {
     type: AnimalType.WOLF,
@@ -124,7 +138,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 3,
     wanderTimeMax: 7,
     fleeDistance: 4,
-    safeDistance: 8
+    safeDistance: 8,
+    maxHealth: 10,
+    dropsFood: false
   },
   [AnimalType.FOX]: {
     type: AnimalType.FOX,
@@ -137,7 +153,9 @@ export const ANIMAL_CONFIGS: Record<AnimalType, AnimalConfig> = {
     wanderTimeMin: 2,
     wanderTimeMax: 6,
     fleeDistance: 5,
-    safeDistance: 10
+    safeDistance: 10,
+    maxHealth: 10,
+    dropsFood: false
   }
 }
 

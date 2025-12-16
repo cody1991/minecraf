@@ -2,12 +2,14 @@
  * Player class - represents the player entity
  * Feature: 005-block-textures - Extended block selection support
  * Feature: 019-inventory-system - Added inventory support
+ * Feature: 020-survival-mechanics - Added survival stats
  */
 
 import * as THREE from 'three'
 import { BlockType, PLACEABLE_BLOCKS } from '../core/Block'
 import { Inventory } from './Inventory'
 import { InventoryState } from './InventoryConstants'
+import { PlayerStats, PlayerStatsState } from '../survival/PlayerStats'
 
 /**
  * Player constants
@@ -57,11 +59,15 @@ export class Player {
   // Inventory system (Feature: 019-inventory-system)
   public readonly inventory: Inventory
 
+  // Survival stats (Feature: 020-survival-mechanics)
+  public readonly stats: PlayerStats
+
   constructor(x: number, y: number, z: number) {
     this.position = new THREE.Vector3(x, y, z)
     this.velocity = new THREE.Vector3(0, 0, 0)
     this.rotation = new THREE.Euler(0, 0, 0, 'YXZ') // Yaw-Pitch-Roll order
     this.inventory = new Inventory()
+    this.stats = new PlayerStats()
   }
 
   /**
@@ -191,6 +197,7 @@ export class Player {
     rotation: { yaw: number; pitch: number }
     selectedBlockIndex?: number
     inventory?: InventoryState
+    stats?: PlayerStatsState
   } {
     return {
       position: {
@@ -204,6 +211,7 @@ export class Player {
       },
       selectedBlockIndex: this.getSelectedBlockIndex(),
       inventory: this.inventory.serialize(),
+      stats: this.stats.serialize(),
     }
   }
 
@@ -215,6 +223,7 @@ export class Player {
     rotation: { yaw: number; pitch: number }
     selectedBlockIndex?: number
     inventory?: InventoryState
+    stats?: PlayerStatsState
   }): void {
     // Restore position
     this.position.set(state.position.x, state.position.y, state.position.z)
@@ -231,6 +240,11 @@ export class Player {
     // Restore inventory (Feature: 019-inventory-system)
     if (state.inventory) {
       this.inventory.deserialize(state.inventory)
+    }
+    
+    // Restore survival stats (Feature: 020-survival-mechanics)
+    if (state.stats) {
+      this.stats.deserialize(state.stats)
     }
     
     // Reset velocity

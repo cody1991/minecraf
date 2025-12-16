@@ -47,7 +47,9 @@ export enum BlockType {
   GOLD_BLOCK = 34,       // 故宫金色装饰
   DARK_STONE = 35,       // 城堡深色石头
   MOSSY_STONE = 36,      // 城堡苔藓石头
-  TORCH = 37             // 火把照明
+  TORCH = 37,            // 火把照明
+  // Survival mechanics blocks (020-survival-mechanics)
+  LAVA = 38              // 岩浆
 }
 
 /**
@@ -107,7 +109,9 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.GOLD_BLOCK]: '金块',
   [BlockType.DARK_STONE]: '深色石头',
   [BlockType.MOSSY_STONE]: '苔藓石头',
-  [BlockType.TORCH]: '火把'
+  [BlockType.TORCH]: '火把',
+  // Survival mechanics blocks (020-survival-mechanics)
+  [BlockType.LAVA]: '岩浆'
 }
 
 /**
@@ -155,7 +159,9 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.GOLD_BLOCK]: 0xffd700,
   [BlockType.DARK_STONE]: 0x4a4a4a,
   [BlockType.MOSSY_STONE]: 0x5a6b4a,
-  [BlockType.TORCH]: 0xffcc00
+  [BlockType.TORCH]: 0xffcc00,
+  // Survival mechanics blocks (020-survival-mechanics)
+  [BlockType.LAVA]: 0xff4500
 }
 
 /**
@@ -468,6 +474,15 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     color: 0xffcc00,
     transparent: true,
     opacity: 1,
+    solid: false
+  },
+  // Survival mechanics blocks (020-survival-mechanics)
+  [BlockType.LAVA]: {
+    name: '岩浆',
+    nameEn: 'Lava',
+    color: 0xff4500,
+    transparent: true,
+    opacity: 0.9,
     solid: false
   }
 }

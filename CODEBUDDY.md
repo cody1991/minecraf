@@ -28,6 +28,8 @@ Auto-generated from all feature plans. Last updated: 2025-12-13
 - TypeScript 5.6 + Three.js 0.170, Vite 6.0, 原生 IndexedDB API (018-world-save-system)
 - IndexedDB（浏览器本地存储） (018-world-save-system)
 - IndexedDB (现有 SaveManager 系统) (019-inventory-system)
+- TypeScript 5.x + Three.js (渲染)、Vite (构建) (020-survival-mechanics)
+- IndexedDB (存档系统已存在) (020-survival-mechanics)
 
 - TypeScript 5.x + Three.js (WebGL 2.0 渲染), Vite (构建工具) (001-basic-block-world)
 
@@ -47,9 +49,9 @@ npm test && npm run lint
 TypeScript 5.x: Follow standard conventions
 
 ## Recent Changes
+- 020-survival-mechanics: Added TypeScript 5.x + Three.js (渲染)、Vite (构建)
 - 019-inventory-system: Added TypeScript 5.6 (ES2020 target) + Three.js 0.170.0, Vite 6.0
 - 018-world-save-system: Added TypeScript 5.6 + Three.js 0.170, Vite 6.0, 原生 IndexedDB API
-- 017-block-sound-effects: Added TypeScript 5.x + Three.js, Web Audio API, Vite
 
 
 <!-- MANUAL ADDITIONS START -->
