@@ -115,7 +115,7 @@ private gameLoop(): void {
 
 ---
 
-## 第二章：开发历程——18 次迭代的演进之路
+## 第二章：开发历程——19 次迭代的演进之路
 
 WebCraft 的开发采用了规格驱动的迭代开发模式。每个功能都有完整的规格文档，定义了用户故事、验收标准和技术要求。以下是项目从零到一的完整演进历程：
 
@@ -226,6 +226,12 @@ WebCraft 的开发采用了规格驱动的迭代开发模式。每个功能都�
 **目标**：让玩家的建造成果能够保存
 
 没有存档功能，所有建造都会在刷新页面后消失。这是最后一个核心功能迭代：使用 IndexedDB 浏览器本地数据库持久化保存世界数据；支持 5 个手动存档槽位，可命名、重命名、删除；方块数据、玩家位置、世界种子全部保存；每 5 分钟自动保存到专用槽位防止意外丢失。存档系统只保存玩家修改过的区块，结合保存的世界种子，加载时可以重新生成未探索区域的地形，大大减少了存储空间需求。
+
+### 迭代 019：物品栏系统
+
+**目标**：实现完整的物品管理和快捷栏功能
+
+一个完整的沙盒游戏需要物品管理系统。这个迭代实现了：破坏方块后掉落物品实体，物品在地面弹跳并受重力影响；玩家靠近时物品自动被吸引并拾取，伴随拾取音效；36 格背包系统（9 格快捷栏 + 27 格存储空间），支持物品堆叠（最多 64 个）；按 E 键打开/关闭背包界面，支持拖拽整理物品；底部快捷栏 UI 显示物品图标和数量，数字键 1-9 快速选择，鼠标滚轮切换当前物品；放置方块时从背包消耗物品。物品实体使用 Three.js 渲染，正确映射纹理图集的 UV 坐标显示对应方块颜色。
 
 ---
 
@@ -619,21 +625,187 @@ export class SaveManager {
 
 ---
 
-## 第九章：性能优化
+## 第九章：物品栏系统
 
-### 9.1 区块加载优化
+### 9.1 系统架构
+
+物品栏系统是沙盒游戏的核心组件，WebCraft 实现了完整的物品管理功能：
+
+```typescript
+// 物品栏常量定义
+export const INVENTORY_TOTAL_SLOTS = 36    // 总槽位数
+export const HOTBAR_SLOTS = 9              // 快捷栏槽位
+export const MAX_STACK_SIZE = 64           // 最大堆叠数量
+export const ITEM_PICKUP_RANGE = 2         // 拾取范围（米）
+export const ITEM_ATTRACTION_RANGE = 3     // 吸引范围（米）
+
+// 物品槽数据结构
+interface ItemSlot {
+  blockType: BlockType    // 方块类型
+  count: number           // 数量（1-64）
+}
+```
+
+### 9.2 物品实体（ItemEntity）
+
+当玩家破坏方块时，会生成一个 3D 物品实体掉落在世界中：
+
+```typescript
+export class ItemEntity {
+  private mesh: THREE.Mesh
+  private velocity: THREE.Vector3
+  private readonly GRAVITY = 20
+  private readonly BOUNCE_FACTOR = 0.4
+  
+  update(deltaTime: number, world: World, playerPos: THREE.Vector3): void {
+    // 应用重力
+    this.velocity.y -= this.GRAVITY * deltaTime
+    
+    // 地面碰撞检测与弹跳
+    if (this.isOnGround(world)) {
+      this.velocity.y = Math.abs(this.velocity.y) * this.BOUNCE_FACTOR
+    }
+    
+    // 玩家吸引效果
+    const distance = this.position.distanceTo(playerPos)
+    if (distance < ITEM_ATTRACTION_RANGE) {
+      const direction = playerPos.clone().sub(this.position).normalize()
+      const strength = 1 - (distance / ITEM_ATTRACTION_RANGE)
+      this.position.add(direction.multiplyScalar(strength * 8 * deltaTime))
+    }
+  }
+}
+```
+
+物品实体的渲染使用了纹理图集的 UV 映射，确保每种方块显示正确的颜色：
+
+```typescript
+// UV 坐标计算 - 从纹理图集中获取正确的方块纹理
+const uScale = 1 / config.columns
+const vScale = 1 / config.rows
+const u0 = tileIndex * uScale
+const u1 = u0 + uScale
+const v0 = (config.rows - 1) * vScale  // 纹理图集第一行
+const v1 = 1.0
+```
+
+### 9.3 背包系统（Inventory）
+
+背包类管理 36 个物品槽位，支持添加、移除、交换等操作：
+
+```typescript
+export class Inventory {
+  private slots: (ItemSlot | null)[] = new Array(36).fill(null)
+  
+  addItem(blockType: BlockType, count: number = 1): number {
+    // 优先堆叠到已有同类物品的槽位
+    for (let i = 0; i < this.slots.length; i++) {
+      const slot = this.slots[i]
+      if (slot?.blockType === blockType && slot.count < MAX_STACK_SIZE) {
+        const canAdd = Math.min(count, MAX_STACK_SIZE - slot.count)
+        slot.count += canAdd
+        count -= canAdd
+        if (count === 0) return 0
+      }
+    }
+    
+    // 放入空槽位
+    for (let i = 0; i < this.slots.length; i++) {
+      if (!this.slots[i]) {
+        const canAdd = Math.min(count, MAX_STACK_SIZE)
+        this.slots[i] = { blockType, count: canAdd }
+        count -= canAdd
+        if (count === 0) return 0
+      }
+    }
+    
+    return count  // 返回未能放入的数量
+  }
+  
+  swapSlots(from: number, to: number): void {
+    [this.slots[from], this.slots[to]] = [this.slots[to], this.slots[from]]
+  }
+}
+```
+
+### 9.4 快捷栏 UI（HotbarUI）
+
+快捷栏显示在屏幕底部，支持多种交互方式：
+
+```typescript
+export class HotbarUI {
+  private selectedIndex: number = 0
+  
+  constructor() {
+    // 数字键 1-9 快速选择
+    document.addEventListener('keydown', (e) => {
+      const num = parseInt(e.key)
+      if (num >= 1 && num <= 9) {
+        this.selectSlot(num - 1)
+      }
+    })
+    
+    // 鼠标滚轮切换
+    document.addEventListener('wheel', (e) => {
+      if (e.deltaY > 0) {
+        this.selectedIndex = (this.selectedIndex + 1) % 9
+      } else {
+        this.selectedIndex = (this.selectedIndex + 8) % 9
+      }
+      this.updateSelection()
+    })
+  }
+}
+```
+
+### 9.5 背包界面（InventoryUI）
+
+按 E 键打开的背包界面使用 HTML5 Drag and Drop API 实现物品拖拽：
+
+```typescript
+export class InventoryUI {
+  private createSlotElement(index: number): HTMLElement {
+    const slot = document.createElement('div')
+    slot.draggable = true
+    
+    slot.addEventListener('dragstart', (e) => {
+      e.dataTransfer?.setData('text/plain', index.toString())
+      this.dragSourceIndex = index
+    })
+    
+    slot.addEventListener('drop', (e) => {
+      e.preventDefault()
+      const fromIndex = parseInt(e.dataTransfer?.getData('text/plain') || '-1')
+      if (fromIndex >= 0) {
+        this.inventory.swapSlots(fromIndex, index)
+        this.updateDisplay()
+      }
+    })
+    
+    return slot
+  }
+}
+```
+
+背包界面布局为 4 行 9 列，顶部 3 行是存储区，底部 1 行是快捷栏，与快捷栏 UI 同步显示。
+
+---
+
+## 第十章：性能优化
+
+### 10.1 区块加载优化
 
 - **视距控制**：只加载玩家视距范围内的区块（默认 8 个区块 = 128 米）
 - **优先级队列**：距离玩家更近的区块优先加载
 - **异步加载**：区块生成在后台进行，不阻塞主线程
 
-### 9.2 渲染优化
+### 10.2 渲染优化
 
 - **视锥剔除**：只渲染在相机视锥内的区块
 - **空区块跳过**：完全由空气组成的区块不渲染
 - **网格缓存**：区块网格只在方块变化时重建
 
-### 9.3 内存优化
+### 10.3 内存优化
 
 - **类型化数组**：使用 `Uint8Array` 存储方块数据，每个方块仅 1 字节
 - **对象池**：复用频繁创建的对象，减少 GC 压力
@@ -641,21 +813,21 @@ export class SaveManager {
 
 ---
 
-## 第十章：开发实践
+## 第十一章：开发实践
 
-### 10.1 规格驱动开发
+### 11.1 规格驱动开发
 
-WebCraft 采用规格驱动开发。每个功能在开发前都会编写详细的规格文档，包括用户故事、验收标准、功能需求和成功指标。项目共有 18 个完整的功能规格文档。
+WebCraft 采用规格驱动开发。每个功能在开发前都会编写详细的规格文档，包括用户故事、验收标准、功能需求和成功指标。项目共有 19 个完整的功能规格文档。
 
-### 10.2 模块化开发
+### 11.2 模块化开发
 
 每个功能都是独立的模块，有清晰的接口定义，可以独立开发和测试。
 
 ---
 
-## 第十一章：总结与展望
+## 第十二章：总结与展望
 
-### 11.1 项目成就
+### 12.1 项目成就
 
 WebCraft 展示了 Web 技术在游戏开发领域的强大能力：
 
@@ -664,16 +836,17 @@ WebCraft 展示了 Web 技术在游戏开发领域的强大能力：
 - **丰富的生态系统**：9 种动物、多种植物、昼夜天气
 - **沉浸式音频**：背景音乐、3D 音效、程序化合成
 - **持久化存档**：5 个手动槽位 + 自动存档
+- **物品管理**：36 格背包、物品堆叠、拖拽整理
 
-### 11.2 技术亮点
+### 12.2 技术亮点
 
 1. **纯前端实现**：不依赖任何后端服务
 2. **程序化生成**：噪声函数驱动的无限世界
 3. **高效渲染**：面剔除、视锥剔除、区块管理
 4. **程序化音频**：运行时合成音效
-5. **规格驱动开发**：18 个完整的功能规格
+5. **规格驱动开发**：19 个完整的功能规格
 
-### 11.3 未来方向
+### 12.3 未来方向
 
 - **多人游戏**：WebSocket/WebRTC 联机
 - **更多方块类型**：红石系统、装饰方块
@@ -681,7 +854,7 @@ WebCraft 展示了 Web 技术在游戏开发领域的强大能力：
 - **地形特性**：更多生物群系、地下结构
 - **性能优化**：Web Worker、WebGPU
 
-### 11.4 结语
+### 12.4 结语
 
 WebCraft 项目证明了：浏览器已经不再只是展示网页的工具，它是一个功能完整的应用平台。通过现代 Web API（WebGL、Web Audio、IndexedDB），我们可以构建出媲美原生应用的复杂游戏。
 
@@ -706,8 +879,9 @@ WebCraft 项目证明了：浏览器已经不再只是展示网页的工具，�
 
 | 按键 | 功能 |
 |------|------|
-| 1-9, 0 | 选择方块类型 |
-| Tab | 循环切换方块 |
+| 1-9 | 选择快捷栏物品 |
+| 滚轮 | 切换快捷栏物品 |
+| E | 打开/关闭背包 |
 | M | 打开/关闭大地图 |
 | V | 切换第一/三人称视角 |
 | C | 角色选择 |
