@@ -175,7 +175,9 @@ export class CharacterModel {
     
     // Reset limbs
     this.parts.leftArm.rotation.x = 0
+    this.parts.leftArm.rotation.z = 0
     this.parts.rightArm.rotation.x = 0
+    this.parts.rightArm.rotation.z = 0
     this.parts.leftLeg.rotation.x = 0
     this.parts.rightLeg.rotation.x = 0
   }
@@ -190,7 +192,9 @@ export class CharacterModel {
     
     // Arms swing opposite to legs
     this.parts.leftArm.rotation.x = swing
+    this.parts.leftArm.rotation.z = 0
     this.parts.rightArm.rotation.x = -swing
+    this.parts.rightArm.rotation.z = 0
     this.parts.leftLeg.rotation.x = -swing
     this.parts.rightLeg.rotation.x = swing
   }
