@@ -55,42 +55,7 @@ export class TextureAtlas {
     this.canvas = document.createElement('canvas')
     this.texture = this.createProceduralAtlas()
     this.loadState = TextureLoadState.FALLBACK
-    
-    // Try to load external texture
-    this.tryLoadExternalTexture()
-  }
-
-  /**
-   * Try to load texture from external file
-   */
-  private tryLoadExternalTexture(): void {
-    this.loadState = TextureLoadState.LOADING
-    
-    // Use BASE_URL for correct path resolution on GitHub Pages
-    const fullPath = import.meta.env.BASE_URL + this.config.imagePath
-    const loader = new THREE.TextureLoader()
-    loader.load(
-      fullPath,
-      (texture) => {
-        // Success - use loaded texture
-        texture.magFilter = THREE.NearestFilter
-        texture.minFilter = THREE.NearestFilter
-        texture.wrapS = THREE.RepeatWrapping
-        texture.wrapT = THREE.RepeatWrapping
-        texture.colorSpace = THREE.SRGBColorSpace
-        
-        this.texture.dispose()
-        this.texture = texture
-        this.loadState = TextureLoadState.LOADED
-        console.log('Texture atlas loaded from file')
-      },
-      undefined,
-      () => {
-        // Error - keep using procedural fallback
-        this.loadState = TextureLoadState.FALLBACK
-        console.log('Using procedural texture fallback')
-      }
-    )
+    // 使用程序生成的纹理，不需要加载外部文件
   }
 
   /**
