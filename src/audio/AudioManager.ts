@@ -177,7 +177,9 @@ export class AudioManager {
     }
 
     try {
-      const response = await fetch(path)
+      // Use BASE_URL for correct path resolution on GitHub Pages
+      const fullPath = import.meta.env.BASE_URL + path
+      const response = await fetch(fullPath)
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`)
       }

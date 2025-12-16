@@ -66,9 +66,11 @@ export class TextureAtlas {
   private tryLoadExternalTexture(): void {
     this.loadState = TextureLoadState.LOADING
     
+    // Use BASE_URL for correct path resolution on GitHub Pages
+    const fullPath = import.meta.env.BASE_URL + this.config.imagePath
     const loader = new THREE.TextureLoader()
     loader.load(
-      this.config.imagePath,
+      fullPath,
       (texture) => {
         // Success - use loaded texture
         texture.magFilter = THREE.NearestFilter
