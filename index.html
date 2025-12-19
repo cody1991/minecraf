@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebCraft - Web 版我的世界</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #1a1a2e;
+      }
+
+      #game-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      #ui-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+      }
+
+      #crosshair::before,
+      #crosshair::after {
+        content: '';
+        position: absolute;
+        background: white;
+      }
+
+      #crosshair::before {
+        width: 2px;
+        height: 20px;
+        left: 9px;
+        top: 0;
+      }
+
+      #crosshair::after {
+        width: 20px;
+        height: 2px;
+        left: 0;
+        top: 9px;
+      }
+
+      #block-selector {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 8px;
+        border-radius: 4px;
+      }
+
+      .block-slot {
+        width: 48px;
+        height: 48px;
+        border: 2px solid #555;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+
+      .block-slot.selected {
+        border-color: white;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+
+      #fps-counter {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-family: monospace;
+        font-size: 14px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+
+      #instructions {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-family: sans-serif;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 20px 40px;
+        border-radius: 8px;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+
+      #instructions.hidden {
+        display: none;
+      }
+
+      #instructions h2 {
+        margin-bottom: 10px;
+      }
+
+      #instructions p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #ccc;
+      }
+    </style>
+    <script type="module" crossorigin src="/minecraft/assets/index-DljUy_7a.js"></script>
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="ui-overlay">
+        <div id="crosshair"></div>
+        <div id="fps-counter">FPS: 0</div>
+        <div id="block-selector"></div>
+        <div id="instructions">
+          <h2>点击开始游戏</h2>
+          <!-- 移动控制 -->
+          <p>WASD/方向键 - 移动</p>
+          <p>Space - 跳跃 / 水中上浮</p>
+          <p>Shift - 冲刺 / 水中下潜</p>
+          <!-- 鼠标操作 -->
+          <p>鼠标 - 视角</p>
+          <p>左键 - 破坏方块</p>
+          <p>右键 - 放置方块</p>
+          <!-- 方块选择 -->
+          <p>1-9, 0 - 选择方块</p>
+          <p>Tab - 循环切换方块</p>
+          <!-- 功能键 -->
+          <p>M - 打开地图</p>
+          <p>V - 切换视角</p>
+          <p>C - 角色选择</p>
+          <p>ESC - 解锁鼠标</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
