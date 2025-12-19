@@ -63,7 +63,49 @@ export enum BlockType {
   COOKED_PORKCHOP = 61,
   COOKED_MUTTON = 62,
   COOKED_CHICKEN = 63,
-  COOKED_RABBIT = 64
+  COOKED_RABBIT = 64,
+  
+  // Crafting & Tools System (023-crafting-tools-system)
+  // Functional blocks
+  CRAFTING_TABLE = 70,
+  FURNACE = 71,
+  FURNACE_LIT = 72,
+  
+  // Materials
+  COAL = 80,
+  CHARCOAL = 81,
+  IRON_ORE = 82,
+  IRON_INGOT = 83,
+  DIAMOND = 84,
+  STICK = 85,
+  
+  // Wood tools
+  WOODEN_PICKAXE = 100,
+  WOODEN_AXE = 101,
+  WOODEN_SHOVEL = 102,
+  WOODEN_SWORD = 103,
+  WOODEN_HOE = 104,
+  
+  // Stone tools
+  STONE_PICKAXE = 110,
+  STONE_AXE = 111,
+  STONE_SHOVEL = 112,
+  STONE_SWORD = 113,
+  STONE_HOE = 114,
+  
+  // Iron tools
+  IRON_PICKAXE = 120,
+  IRON_AXE = 121,
+  IRON_SHOVEL = 122,
+  IRON_SWORD = 123,
+  IRON_HOE = 124,
+  
+  // Diamond tools
+  DIAMOND_PICKAXE = 130,
+  DIAMOND_AXE = 131,
+  DIAMOND_SHOVEL = 132,
+  DIAMOND_SWORD = 133,
+  DIAMOND_HOE = 134
 }
 
 /**
@@ -139,7 +181,42 @@ export const BLOCK_NAMES: Record<BlockType, string> = {
   [BlockType.COOKED_PORKCHOP]: '熟猪排',
   [BlockType.COOKED_MUTTON]: '熟羊肉',
   [BlockType.COOKED_CHICKEN]: '熟鸡肉',
-  [BlockType.COOKED_RABBIT]: '熟兔肉'
+  [BlockType.COOKED_RABBIT]: '熟兔肉',
+  
+  // Crafting & Tools System (023-crafting-tools-system)
+  [BlockType.CRAFTING_TABLE]: '工作台',
+  [BlockType.FURNACE]: '熔炉',
+  [BlockType.FURNACE_LIT]: '熔炉',
+  [BlockType.COAL]: '煤炭',
+  [BlockType.CHARCOAL]: '木炭',
+  [BlockType.IRON_ORE]: '铁矿石',
+  [BlockType.IRON_INGOT]: '铁锭',
+  [BlockType.DIAMOND]: '钻石',
+  [BlockType.STICK]: '木棍',
+  // Wood tools
+  [BlockType.WOODEN_PICKAXE]: '木镐',
+  [BlockType.WOODEN_AXE]: '木斧',
+  [BlockType.WOODEN_SHOVEL]: '木锹',
+  [BlockType.WOODEN_SWORD]: '木剑',
+  [BlockType.WOODEN_HOE]: '木锄',
+  // Stone tools
+  [BlockType.STONE_PICKAXE]: '石镐',
+  [BlockType.STONE_AXE]: '石斧',
+  [BlockType.STONE_SHOVEL]: '石锹',
+  [BlockType.STONE_SWORD]: '石剑',
+  [BlockType.STONE_HOE]: '石锄',
+  // Iron tools
+  [BlockType.IRON_PICKAXE]: '铁镐',
+  [BlockType.IRON_AXE]: '铁斧',
+  [BlockType.IRON_SHOVEL]: '铁锹',
+  [BlockType.IRON_SWORD]: '铁剑',
+  [BlockType.IRON_HOE]: '铁锄',
+  // Diamond tools
+  [BlockType.DIAMOND_PICKAXE]: '钻石镐',
+  [BlockType.DIAMOND_AXE]: '钻石斧',
+  [BlockType.DIAMOND_SHOVEL]: '钻石锹',
+  [BlockType.DIAMOND_SWORD]: '钻石剑',
+  [BlockType.DIAMOND_HOE]: '钻石锄'
 }
 
 /**
@@ -203,7 +280,42 @@ export const BLOCK_COLORS: Record<BlockType, number> = {
   [BlockType.COOKED_PORKCHOP]: 0xcd853f, // 金棕色
   [BlockType.COOKED_MUTTON]: 0xa0522d,   // 深棕色
   [BlockType.COOKED_CHICKEN]: 0xdaa520,  // 金黄色
-  [BlockType.COOKED_RABBIT]: 0xb8860b    // 深金色
+  [BlockType.COOKED_RABBIT]: 0xb8860b,   // 深金色
+  
+  // Crafting & Tools System (023-crafting-tools-system)
+  [BlockType.CRAFTING_TABLE]: 0xbc8f5a, // 木板色
+  [BlockType.FURNACE]: 0x808080,        // 石头色
+  [BlockType.FURNACE_LIT]: 0xff6600,    // 橙色（燃烧中）
+  [BlockType.COAL]: 0x2a2a2a,           // 深灰色
+  [BlockType.CHARCOAL]: 0x3a3a3a,       // 灰色
+  [BlockType.IRON_ORE]: 0xd4a574,       // 铁矿色
+  [BlockType.IRON_INGOT]: 0xd4d4d4,     // 银色
+  [BlockType.DIAMOND]: 0x4aedd9,        // 钻石蓝
+  [BlockType.STICK]: 0x8b6914,          // 木棍色
+  // Wood tools
+  [BlockType.WOODEN_PICKAXE]: 0xbc8f5a,
+  [BlockType.WOODEN_AXE]: 0xbc8f5a,
+  [BlockType.WOODEN_SHOVEL]: 0xbc8f5a,
+  [BlockType.WOODEN_SWORD]: 0xbc8f5a,
+  [BlockType.WOODEN_HOE]: 0xbc8f5a,
+  // Stone tools
+  [BlockType.STONE_PICKAXE]: 0x808080,
+  [BlockType.STONE_AXE]: 0x808080,
+  [BlockType.STONE_SHOVEL]: 0x808080,
+  [BlockType.STONE_SWORD]: 0x808080,
+  [BlockType.STONE_HOE]: 0x808080,
+  // Iron tools
+  [BlockType.IRON_PICKAXE]: 0xd4d4d4,
+  [BlockType.IRON_AXE]: 0xd4d4d4,
+  [BlockType.IRON_SHOVEL]: 0xd4d4d4,
+  [BlockType.IRON_SWORD]: 0xd4d4d4,
+  [BlockType.IRON_HOE]: 0xd4d4d4,
+  // Diamond tools
+  [BlockType.DIAMOND_PICKAXE]: 0x4aedd9,
+  [BlockType.DIAMOND_AXE]: 0x4aedd9,
+  [BlockType.DIAMOND_SHOVEL]: 0x4aedd9,
+  [BlockType.DIAMOND_SWORD]: 0x4aedd9,
+  [BlockType.DIAMOND_HOE]: 0x4aedd9
 }
 
 /**
@@ -617,6 +729,244 @@ export const BLOCK_PROPERTIES: Record<BlockType, BlockProperties> = {
     transparent: false,
     opacity: 1,
     solid: false
+  },
+  
+  // Crafting & Tools System (023-crafting-tools-system)
+  [BlockType.CRAFTING_TABLE]: {
+    name: '工作台',
+    nameEn: 'Crafting Table',
+    color: 0xbc8f5a,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.FURNACE]: {
+    name: '熔炉',
+    nameEn: 'Furnace',
+    color: 0x808080,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.FURNACE_LIT]: {
+    name: '熔炉',
+    nameEn: 'Furnace',
+    color: 0xff6600,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.COAL]: {
+    name: '煤炭',
+    nameEn: 'Coal',
+    color: 0x2a2a2a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.CHARCOAL]: {
+    name: '木炭',
+    nameEn: 'Charcoal',
+    color: 0x3a3a3a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.IRON_ORE]: {
+    name: '铁矿石',
+    nameEn: 'Iron Ore',
+    color: 0xd4a574,
+    transparent: false,
+    opacity: 1,
+    solid: true
+  },
+  [BlockType.IRON_INGOT]: {
+    name: '铁锭',
+    nameEn: 'Iron Ingot',
+    color: 0xd4d4d4,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DIAMOND]: {
+    name: '钻石',
+    nameEn: 'Diamond',
+    color: 0x4aedd9,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.STICK]: {
+    name: '木棍',
+    nameEn: 'Stick',
+    color: 0x8b6914,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  // Wood tools
+  [BlockType.WOODEN_PICKAXE]: {
+    name: '木镐',
+    nameEn: 'Wooden Pickaxe',
+    color: 0xbc8f5a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.WOODEN_AXE]: {
+    name: '木斧',
+    nameEn: 'Wooden Axe',
+    color: 0xbc8f5a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.WOODEN_SHOVEL]: {
+    name: '木锹',
+    nameEn: 'Wooden Shovel',
+    color: 0xbc8f5a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.WOODEN_SWORD]: {
+    name: '木剑',
+    nameEn: 'Wooden Sword',
+    color: 0xbc8f5a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.WOODEN_HOE]: {
+    name: '木锄',
+    nameEn: 'Wooden Hoe',
+    color: 0xbc8f5a,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  // Stone tools
+  [BlockType.STONE_PICKAXE]: {
+    name: '石镐',
+    nameEn: 'Stone Pickaxe',
+    color: 0x808080,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.STONE_AXE]: {
+    name: '石斧',
+    nameEn: 'Stone Axe',
+    color: 0x808080,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.STONE_SHOVEL]: {
+    name: '石锹',
+    nameEn: 'Stone Shovel',
+    color: 0x808080,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.STONE_SWORD]: {
+    name: '石剑',
+    nameEn: 'Stone Sword',
+    color: 0x808080,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.STONE_HOE]: {
+    name: '石锄',
+    nameEn: 'Stone Hoe',
+    color: 0x808080,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  // Iron tools
+  [BlockType.IRON_PICKAXE]: {
+    name: '铁镐',
+    nameEn: 'Iron Pickaxe',
+    color: 0xd4d4d4,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.IRON_AXE]: {
+    name: '铁斧',
+    nameEn: 'Iron Axe',
+    color: 0xd4d4d4,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.IRON_SHOVEL]: {
+    name: '铁锹',
+    nameEn: 'Iron Shovel',
+    color: 0xd4d4d4,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.IRON_SWORD]: {
+    name: '铁剑',
+    nameEn: 'Iron Sword',
+    color: 0xd4d4d4,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.IRON_HOE]: {
+    name: '铁锄',
+    nameEn: 'Iron Hoe',
+    color: 0xd4d4d4,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  // Diamond tools
+  [BlockType.DIAMOND_PICKAXE]: {
+    name: '钻石镐',
+    nameEn: 'Diamond Pickaxe',
+    color: 0x4aedd9,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DIAMOND_AXE]: {
+    name: '钻石斧',
+    nameEn: 'Diamond Axe',
+    color: 0x4aedd9,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DIAMOND_SHOVEL]: {
+    name: '钻石锹',
+    nameEn: 'Diamond Shovel',
+    color: 0x4aedd9,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DIAMOND_SWORD]: {
+    name: '钻石剑',
+    nameEn: 'Diamond Sword',
+    color: 0x4aedd9,
+    transparent: false,
+    opacity: 1,
+    solid: false
+  },
+  [BlockType.DIAMOND_HOE]: {
+    name: '钻石锄',
+    nameEn: 'Diamond Hoe',
+    color: 0x4aedd9,
+    transparent: false,
+    opacity: 1,
+    solid: false
   }
 }
 
@@ -711,5 +1061,7 @@ export const PLACEABLE_BLOCKS: BlockType[] = [
   BlockType.LOG,
   BlockType.PLANKS,
   BlockType.SNOW,
-  BlockType.CAMPFIRE  // Feature: 023-campfire-system
+  BlockType.CAMPFIRE,  // Feature: 023-campfire-system
+  BlockType.CRAFTING_TABLE,  // Feature: 023-crafting-tools-system
+  BlockType.FURNACE  // Feature: 023-crafting-tools-system
 ]

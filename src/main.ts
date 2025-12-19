@@ -36,6 +36,11 @@ import { CrackOverlay } from './renderer/CrackOverlay'
 import { CampfireManager } from './entities/CampfireManager'
 import { BlockType } from './core/Block'
 import { Raycaster, INTERACTION_DISTANCE } from './utils/Raycaster'
+import { initializeCraftingSystem } from './crafting'
+import { initializeToolSystem } from './tools'
+import { FurnaceManager } from './furnace/FurnaceManager'
+import { CraftingTableUI } from './ui/CraftingTableUI'
+import { FurnaceUI } from './ui/FurnaceUI'
 
 /**
  * WebCraft - Web 版我的世界
@@ -48,6 +53,7 @@ import { Raycaster, INTERACTION_DISTANCE } from './utils/Raycaster'
  * Feature: 020-survival-mechanics - Added survival system
  * Feature: 023-digging-system - Added progressive digging
  * Feature: 023-campfire-system - Added campfire cooking
+ * Feature: 023-crafting-tools-system - Added crafting and tools
  */
 
 // Wait for DOM to be ready
@@ -65,6 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const game = new Game(container, { seed })
 
+  // Initialize crafting and tool systems (Feature: 023-crafting-tools-system)
+  initializeCraftingSystem()
+  initializeToolSystem()
+
   // Initialize model library
   initializeModelLibrary()
   const modelLibrary = CharacterModelLibrary.getInstance()
@@ -80,13 +90,15 @@ document.addEventListener('DOMContentLoaded', () => {
   game.setPlayer(player)
 
   // ============================================================================
-  // Initial Inventory Setup (Feature: 023-campfire-system)
+  // Initial Inventory Setup (Feature: 023-crafting-tools-system)
   // ============================================================================
-  // Give player starter items for testing campfire cooking
-  player.inventory.addItem(BlockType.CAMPFIRE, 4)      // Campfires
-  player.inventory.addItem(BlockType.RAW_BEEF, 8)      // Raw beef
-  player.inventory.addItem(BlockType.RAW_PORKCHOP, 4)  // Raw porkchop
-  player.inventory.addItem(BlockType.RAW_CHICKEN, 4)   // Raw chicken
+  // Give player starter items for testing crafting system
+  player.inventory.addItem(BlockType.LOG, 16)           // Logs for crafting
+  player.inventory.addItem(BlockType.OAK_LOG, 16)       // Oak logs
+  player.inventory.addItem(BlockType.COBBLESTONE, 32)   // Cobblestone for tools
+  player.inventory.addItem(BlockType.CAMPFIRE, 4)       // Campfires
+  player.inventory.addItem(BlockType.RAW_BEEF, 8)       // Raw beef
+  player.inventory.addItem(BlockType.RAW_PORKCHOP, 4)   // Raw porkchop
 
   // Create character model from saved preference or default
   const savedModelId = preferenceManager.getSelectedModelId('default')
@@ -306,6 +318,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (blockType === BlockType.CAMPFIRE) {
         campfireManager.onBlockRemoved(x, y, z)
       }
+      // Handle furnace removal (Feature: 023-crafting-tools-system)
+      if (blockType === BlockType.FURNACE || blockType === BlockType.FURNACE_LIT) {
+        furnaceManager.onBlockRemoved(x, y, z)
+      }
     },
     onItemDrop: (item) => {
       game.addItemEntity(item)
@@ -326,6 +342,31 @@ document.addEventListener('DOMContentLoaded', () => {
   })
   inventoryUI.setOnClose(() => {
     inputManager.requestPointerLock()
+  })
+  
+  // Create crafting table UI (Feature: 023-crafting-tools-system)
+  const craftingTableUI = new CraftingTableUI()
+  craftingTableUI.setOnOpen(() => {
+    inputManager.exitPointerLock()
+  })
+  craftingTableUI.setOnClose(() => {
+    inputManager.requestPointerLock()
+  })
+  
+  // Create furnace UI (Feature: 023-crafting-tools-system)
+  const furnaceUI = new FurnaceUI()
+  furnaceUI.setOnOpen(() => {
+    inputManager.exitPointerLock()
+  })
+  furnaceUI.setOnClose(() => {
+    inputManager.requestPointerLock()
+  })
+  
+  // Initialize furnace manager
+  const furnaceManager = FurnaceManager.getInstance()
+  furnaceManager.initialize(game.getWorld())
+  furnaceManager.setOnItemDrop((item) => {
+    game.addItemEntity(item)
   })
   
   // Create 3D target indicator for third-person view
@@ -498,6 +539,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update campfire system (Feature: 023-campfire-system)
     campfireManager.update(deltaTime)
+    
+    // Update furnace system (Feature: 023-crafting-tools-system)
+    furnaceManager.update(deltaTime)
+    
     combatSystem.update(deltaTime)
     
     // Set up death callbacks for newly spawned animals
@@ -581,17 +626,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Handle block placement / eating / campfire (right click)
+      // Handle block placement / eating / campfire / crafting table (right click)
       if (input.rightClick) {
         const selectedItem = player.inventory.getSelectedItem()
         const holdingRawFood = selectedItem.itemType && FoodRegistry.isRawFood(selectedItem.itemType)
         const holdingFood = selectedItem.itemType && FoodRegistry.isFoodBlock(selectedItem.itemType)
         
+        // First check if looking at interactive block
+        const raycaster = new Raycaster(game.getWorld())
+        const hit = raycaster.cast(player.getEyePosition(), player.getLookDirection())
+        
+        // Check for crafting table interaction (Feature: 023-crafting-tools-system)
+        if (hit && hit.distance <= INTERACTION_DISTANCE && hit.blockType === BlockType.CRAFTING_TABLE) {
+          craftingTableUI.open(player.inventory)
+          diggingManager.forceStop()
+        }
+        // Check for furnace interaction (Feature: 023-crafting-tools-system)
+        else if (hit && hit.distance <= INTERACTION_DISTANCE && 
+                 (hit.blockType === BlockType.FURNACE || hit.blockType === BlockType.FURNACE_LIT)) {
+          furnaceUI.open(player.inventory, hit.blockX, hit.blockY, hit.blockZ)
+          diggingManager.forceStop()
+        }
         // Check if looking at campfire while holding raw food
-        if (holdingRawFood) {
-          const raycaster = new Raycaster(game.getWorld())
-          const hit = raycaster.cast(player.getEyePosition(), player.getLookDirection())
-          
+        else if (holdingRawFood) {
           if (hit && hit.distance <= INTERACTION_DISTANCE && hit.blockType === BlockType.CAMPFIRE) {
             // Try to add food to campfire
             const added = campfireManager.addFoodToCampfire(
@@ -630,6 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check if placed a campfire (Feature: 023-campfire-system)
             if (placeResult.blockType === BlockType.CAMPFIRE) {
               campfireManager.onBlockPlaced(placeResult.x, placeResult.y, placeResult.z, BlockType.CAMPFIRE)
+            }
+            // Check if placed a furnace (Feature: 023-crafting-tools-system)
+            if (placeResult.blockType === BlockType.FURNACE) {
+              furnaceManager.onBlockPlaced(placeResult.x, placeResult.y, placeResult.z, BlockType.FURNACE)
             }
           }
         }

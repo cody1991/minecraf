@@ -69,6 +69,10 @@ export interface ItemSlot {
   itemType: BlockType | null
   /** Stack count (0-64), 0 if empty */
   count: number
+  /** Tool durability (only for tools) - Feature: 023-crafting-tools-system */
+  durability?: number
+  /** Max durability (only for tools) - Feature: 023-crafting-tools-system */
+  maxDurability?: number
 }
 
 /**
@@ -77,6 +81,8 @@ export interface ItemSlot {
 export interface ItemSlotSerialized {
   itemType: number | null
   count: number
+  durability?: number
+  maxDurability?: number
 }
 
 /**

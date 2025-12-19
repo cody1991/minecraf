@@ -1,11 +1,9 @@
 /**
- * InventoryUI - Full inventory management interface with 2×2 crafting
- * Feature: 019-inventory-system
- * Feature: 023-crafting-tools-system - Added 2×2 crafting grid
+ * CraftingTableUI - 3×3 crafting table interface
+ * Feature: 023-crafting-tools-system
  * 
- * Displays 36-slot inventory grid with drag-and-drop support.
- * Includes 2×2 crafting grid for basic crafting.
- * Opens with E key, closes with E or ESC.
+ * Displays 3×3 crafting grid with drag-and-drop support.
+ * Opens when right-clicking a crafting table block.
  */
 
 import { BlockType, BLOCK_COLORS } from '../core/Block'
@@ -17,21 +15,21 @@ import { RecipeRegistry } from '../crafting/RecipeRegistry'
 import { CraftingRecipe } from '../crafting/CraftingRecipe'
 import { ToolSystem } from '../tools/ToolSystem'
 
-// Crafting grid slot indices (virtual, not in main inventory)
-const CRAFTING_GRID_SIZE = 4  // 2×2
-const CRAFTING_OUTPUT_INDEX = -1  // Special index for output
+// Crafting grid size for 3×3
+const CRAFTING_GRID_SIZE = 9
+const CRAFTING_OUTPUT_INDEX = -1
 
 /**
- * Inventory UI component with 2×2 crafting
+ * Crafting Table UI component
  */
-export class InventoryUI {
+export class CraftingTableUI {
   private container: HTMLElement | null = null
   private overlay: HTMLElement | null = null
   private slotElements: HTMLElement[] = []
   private inventory: Inventory | null = null
   private _isOpen: boolean = false
 
-  // Crafting grid state (Feature: 023-crafting-tools-system)
+  // Crafting grid state
   private craftingGrid: ItemSlot[] = []
   private craftingSlotElements: HTMLElement[] = []
   private craftingOutputElement: HTMLElement | null = null
@@ -47,7 +45,7 @@ export class InventoryUI {
   private onCloseCallback: (() => void) | null = null
 
   constructor() {
-    // Initialize crafting grid
+    // Initialize 3×3 crafting grid
     for (let i = 0; i < CRAFTING_GRID_SIZE; i++) {
       this.craftingGrid.push(createEmptySlot())
     }
@@ -57,12 +55,12 @@ export class InventoryUI {
   }
 
   /**
-   * Create the inventory UI elements
+   * Create the crafting table UI elements
    */
   private createUI(): void {
     // Create overlay
     this.overlay = document.createElement('div')
-    this.overlay.id = 'inventory-overlay'
+    this.overlay.id = 'crafting-table-overlay'
     this.overlay.style.cssText = `
       position: fixed;
       top: 0;
@@ -78,7 +76,7 @@ export class InventoryUI {
 
     // Create container
     this.container = document.createElement('div')
-    this.container.id = 'inventory-container'
+    this.container.id = 'crafting-table-container'
     this.container.style.cssText = `
       background: #8b8b8b;
       border: 4px solid #373737;
@@ -89,7 +87,7 @@ export class InventoryUI {
 
     // Create title
     const title = document.createElement('div')
-    title.textContent = '背包'
+    title.textContent = '工作台'
     title.style.cssText = `
       color: #404040;
       font-size: 16px;
@@ -99,8 +97,17 @@ export class InventoryUI {
     `
     this.container.appendChild(title)
 
-    // Create crafting area (Feature: 023-crafting-tools-system)
+    // Create crafting area
     this.createCraftingArea()
+
+    // Create separator
+    const separator = document.createElement('div')
+    separator.style.cssText = `
+      height: 2px;
+      background: #555;
+      margin: 16px 0;
+    `
+    this.container.appendChild(separator)
 
     // Create storage grid (27 slots: 3 rows x 9 columns)
     const storageGrid = document.createElement('div')
@@ -118,15 +125,6 @@ export class InventoryUI {
       this.slotElements[i] = slot
     }
     this.container.appendChild(storageGrid)
-
-    // Create separator
-    const separator = document.createElement('div')
-    separator.style.cssText = `
-      height: 2px;
-      background: #555;
-      margin: 8px 0;
-    `
-    this.container.appendChild(separator)
 
     // Create hotbar grid (9 slots)
     const hotbarGrid = document.createElement('div')
@@ -167,7 +165,7 @@ export class InventoryUI {
   }
 
   /**
-   * Create 2×2 crafting area (Feature: 023-crafting-tools-system)
+   * Create 3×3 crafting area
    */
   private createCraftingArea(): void {
     const craftingArea = document.createElement('div')
@@ -175,30 +173,17 @@ export class InventoryUI {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      margin-bottom: 16px;
-      padding: 12px;
+      gap: 24px;
+      padding: 16px;
       background: #6b6b6b;
       border-radius: 4px;
     `
 
-    // Crafting label
-    const label = document.createElement('div')
-    label.textContent = '合成'
-    label.style.cssText = `
-      color: #404040;
-      font-size: 14px;
-      font-weight: bold;
-      writing-mode: vertical-rl;
-      text-orientation: upright;
-    `
-    craftingArea.appendChild(label)
-
-    // 2×2 crafting grid
+    // 3×3 crafting grid
     const craftingGrid = document.createElement('div')
     craftingGrid.style.cssText = `
       display: grid;
-      grid-template-columns: repeat(2, 48px);
+      grid-template-columns: repeat(3, 48px);
       gap: 4px;
     `
 
@@ -213,7 +198,7 @@ export class InventoryUI {
     const arrow = document.createElement('div')
     arrow.textContent = '→'
     arrow.style.cssText = `
-      font-size: 24px;
+      font-size: 32px;
       color: #404040;
     `
     craftingArea.appendChild(arrow)
@@ -221,6 +206,8 @@ export class InventoryUI {
     // Output slot
     this.craftingOutputElement = this.createSlot(CRAFTING_OUTPUT_INDEX, 'output')
     this.craftingOutputElement.style.cssText += `
+      width: 56px;
+      height: 56px;
       background: #a0a0a0;
       border-color: #505050;
       border-top-color: #d0d0d0;
@@ -279,7 +266,7 @@ export class InventoryUI {
     `
     slot.appendChild(count)
 
-    // Durability bar (Feature: 023-crafting-tools-system)
+    // Durability bar
     const durabilityBar = document.createElement('div')
     durabilityBar.className = 'durability-bar'
     durabilityBar.style.cssText = `
@@ -313,19 +300,11 @@ export class InventoryUI {
       slot.addEventListener('click', () => this.handleOutputClick())
     }
 
-    // Right-click for split stack
-    slot.addEventListener('contextmenu', (e) => {
-      e.preventDefault()
-      if (source === 'inventory') {
-        this.handleRightClick(index)
-      }
-    })
-
     return slot
   }
 
   /**
-   * Setup keyboard listener for E and ESC keys
+   * Setup keyboard listener
    */
   private setupKeyboardListener(): void {
     document.addEventListener('keydown', (e) => {
@@ -342,7 +321,6 @@ export class InventoryUI {
    * Handle drag start
    */
   private handleDragStart(e: DragEvent, index: number, source: 'inventory' | 'crafting' | 'output'): void {
-    // Can't drag from output
     if (source === 'output') {
       e.preventDefault()
       return
@@ -370,7 +348,6 @@ export class InventoryUI {
       e.dataTransfer.setData('text/plain', `${source}:${index}`)
     }
 
-    // Visual feedback
     setTimeout(() => {
       if (this.draggedElement) {
         this.draggedElement.style.opacity = '0.5'
@@ -394,14 +371,10 @@ export class InventoryUI {
   private handleDrop(e: DragEvent, targetIndex: number, targetSource: 'inventory' | 'crafting' | 'output'): void {
     e.preventDefault()
     
-    // Can't drop on output
     if (targetSource === 'output') return
     if (this.draggedSlotIndex < 0) return
-
-    // Same slot
     if (this.dragSource === targetSource && this.draggedSlotIndex === targetIndex) return
 
-    // Get source and target slots
     let sourceSlot: ItemSlot | null = null
     let targetSlot: ItemSlot | null = null
 
@@ -423,7 +396,6 @@ export class InventoryUI {
     if (this.dragSource === 'inventory' && targetSource === 'inventory' && this.inventory) {
       this.inventory.swapSlots(this.draggedSlotIndex, targetIndex)
     } else if (this.dragSource === 'crafting' && targetSource === 'crafting') {
-      // Swap within crafting grid
       const srcSlot = this.craftingGrid[this.draggedSlotIndex]
       const tgtSlot = this.craftingGrid[targetIndex]
       if (srcSlot && tgtSlot) {
@@ -432,25 +404,20 @@ export class InventoryUI {
         this.craftingGrid[this.draggedSlotIndex] = temp
       }
     } else {
-      // Move between inventory and crafting
       if (this.dragSource === 'inventory' && targetSource === 'crafting' && this.inventory) {
-        // Move from inventory to crafting
         if (targetSlot && isSlotEmpty(targetSlot)) {
           this.craftingGrid[targetIndex] = { itemType: sourceSlot.itemType, count: sourceSlot.count, durability: sourceSlot.durability, maxDurability: sourceSlot.maxDurability }
           this.inventory.setSlot(this.draggedSlotIndex, createEmptySlot())
         } else if (targetSlot) {
-          // Swap
           const temp: ItemSlot = { itemType: targetSlot.itemType, count: targetSlot.count, durability: targetSlot.durability, maxDurability: targetSlot.maxDurability }
           this.craftingGrid[targetIndex] = { itemType: sourceSlot.itemType, count: sourceSlot.count, durability: sourceSlot.durability, maxDurability: sourceSlot.maxDurability }
           this.inventory.setSlot(this.draggedSlotIndex, temp)
         }
       } else if (this.dragSource === 'crafting' && targetSource === 'inventory' && this.inventory) {
-        // Move from crafting to inventory
         if (targetSlot && isSlotEmpty(targetSlot)) {
           this.inventory.setSlot(targetIndex, { itemType: sourceSlot.itemType, count: sourceSlot.count, durability: sourceSlot.durability, maxDurability: sourceSlot.maxDurability })
           this.craftingGrid[this.draggedSlotIndex] = createEmptySlot()
         } else {
-          // Swap
           const invSlot = this.inventory.getSlot(targetIndex)
           if (invSlot) {
             const temp: ItemSlot = { itemType: invSlot.itemType, count: invSlot.count, durability: invSlot.durability, maxDurability: invSlot.maxDurability }
@@ -477,21 +444,20 @@ export class InventoryUI {
   }
 
   /**
-   * Handle output slot click (Feature: 023-crafting-tools-system)
+   * Handle output slot click
    */
   private handleOutputClick(): void {
     if (!this.currentRecipe || !this.inventory) return
 
     const result = this.currentRecipe.result
 
-    // Check if we can add to inventory
     const canAdd = this.inventory.canAddItem(result.item, result.count)
     if (!canAdd) {
-      console.log('[InventoryUI] Inventory full, cannot take crafting output')
+      console.log('[CraftingTableUI] Inventory full')
       return
     }
 
-    // Add result to inventory (with durability for tools)
+    // Add result with durability for tools
     const toolSystem = ToolSystem.getInstance()
     if (toolSystem.isTool(result.item)) {
       const maxDurability = toolSystem.getMaxDurability(result.item)
@@ -500,57 +466,62 @@ export class InventoryUI {
       this.inventory.addItem(result.item, result.count)
     }
 
-    // Consume ingredients
     this.consumeCraftingIngredients()
-
-    // Update display
     this.updateCraftingOutput()
     this.update()
   }
 
   /**
-   * Consume crafting ingredients based on current recipe
+   * Consume crafting ingredients
    */
   private consumeCraftingIngredients(): void {
     if (!this.currentRecipe) return
 
     if (this.currentRecipe.type === 'shaped' && this.currentRecipe.pattern) {
-      // For shaped recipes, consume one from each matching position
       const pattern = this.currentRecipe.pattern
       const ingredients = this.currentRecipe.ingredients
 
-      // Find the offset of the pattern in the grid
-      // Since we use normalized matching, we need to find where items are
-      for (let row = 0; row < 2; row++) {
-        for (let col = 0; col < 2; col++) {
-          const gridIndex = row * 2 + col
-          const gridSlot = this.craftingGrid[gridIndex]
-          if (gridSlot && !isSlotEmpty(gridSlot)) {
-            // Found first item, this is our starting point
-            // Consume items based on pattern
-            for (let py = 0; py < pattern.length && (row + py) < 2; py++) {
-              const patternRow = pattern[py]
-              if (!patternRow) continue
-              for (let px = 0; px < patternRow.length && (col + px) < 2; px++) {
-                const char = patternRow[px]
-                if (char && char !== ' ' && ingredients[char]) {
-                  const idx = (row + py) * 2 + (col + px)
-                  const slot = this.craftingGrid[idx]
-                  if (idx < 4 && slot && !isSlotEmpty(slot)) {
-                    slot.count--
-                    if (slot.count <= 0) {
-                      this.craftingGrid[idx] = createEmptySlot()
-                    }
+      // Find pattern offset in grid
+      let startRow = -1
+      let startCol = -1
+      
+      outer: for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const gridIndex = row * 3 + col
+          const slot = this.craftingGrid[gridIndex]
+          if (slot && !isSlotEmpty(slot)) {
+            startRow = row
+            startCol = col
+            break outer
+          }
+        }
+      }
+
+      if (startRow >= 0 && startCol >= 0) {
+        for (let py = 0; py < pattern.length; py++) {
+          const patternRow = pattern[py]
+          if (!patternRow) continue
+          for (let px = 0; px < patternRow.length; px++) {
+            const char = patternRow[px]
+            if (char && char !== ' ' && ingredients[char]) {
+              const gridRow = startRow + py
+              const gridCol = startCol + px
+              if (gridRow < 3 && gridCol < 3) {
+                const idx = gridRow * 3 + gridCol
+                const slot = this.craftingGrid[idx]
+                if (slot && !isSlotEmpty(slot)) {
+                  slot.count--
+                  if (slot.count <= 0) {
+                    this.craftingGrid[idx] = createEmptySlot()
                   }
                 }
               }
             }
-            return
           }
         }
       }
     } else {
-      // For shapeless recipes, consume one from each non-empty slot
+      // Shapeless - consume one from each non-empty slot
       for (let i = 0; i < CRAFTING_GRID_SIZE; i++) {
         const slot = this.craftingGrid[i]
         if (slot && !isSlotEmpty(slot)) {
@@ -564,29 +535,20 @@ export class InventoryUI {
   }
 
   /**
-   * Handle right-click (split stack)
-   */
-  private handleRightClick(index: number): void {
-    // For now, just log - full split implementation would need cursor item
-    console.log(`[InventoryUI] Right-click on slot ${index}`)
-  }
-
-  /**
-   * Update crafting output based on grid contents
+   * Update crafting output
    */
   private updateCraftingOutput(): void {
     const registry = RecipeRegistry.getInstance()
     
-    // Convert crafting grid to 2D array
+    // Convert to 3×3 grid
     const grid: (BlockType | null)[][] = [
-      [this.craftingGrid[0]?.itemType ?? null, this.craftingGrid[1]?.itemType ?? null],
-      [this.craftingGrid[2]?.itemType ?? null, this.craftingGrid[3]?.itemType ?? null]
+      [this.craftingGrid[0]?.itemType ?? null, this.craftingGrid[1]?.itemType ?? null, this.craftingGrid[2]?.itemType ?? null],
+      [this.craftingGrid[3]?.itemType ?? null, this.craftingGrid[4]?.itemType ?? null, this.craftingGrid[5]?.itemType ?? null],
+      [this.craftingGrid[6]?.itemType ?? null, this.craftingGrid[7]?.itemType ?? null, this.craftingGrid[8]?.itemType ?? null]
     ]
 
-    // Find matching recipe
     this.currentRecipe = registry.findMatch(grid)
 
-    // Update output display
     if (this.craftingOutputElement) {
       if (this.currentRecipe) {
         const outputSlot: ItemSlot = {
@@ -601,7 +563,7 @@ export class InventoryUI {
   }
 
   /**
-   * Open the inventory UI
+   * Open the crafting table UI
    */
   open(inventory: Inventory): void {
     this.inventory = inventory
@@ -620,10 +582,9 @@ export class InventoryUI {
   }
 
   /**
-   * Close the inventory UI
+   * Close the crafting table UI
    */
   close(): void {
-    // Return crafting grid items to inventory
     this.returnCraftingItems()
     
     this._isOpen = false
@@ -648,8 +609,7 @@ export class InventoryUI {
       if (slot && !isSlotEmpty(slot) && slot.itemType !== null) {
         const added = this.inventory.addItem(slot.itemType, slot.count)
         if (added < slot.count) {
-          // TODO: Drop remaining items as entities
-          console.log(`[InventoryUI] Could not return ${slot.count - added} items to inventory`)
+          console.log(`[CraftingTableUI] Could not return ${slot.count - added} items`)
         }
         this.craftingGrid[i] = createEmptySlot()
       }
@@ -657,18 +617,7 @@ export class InventoryUI {
   }
 
   /**
-   * Toggle inventory open/close
-   */
-  toggle(inventory: Inventory): void {
-    if (this._isOpen) {
-      this.close()
-    } else {
-      this.open(inventory)
-    }
-  }
-
-  /**
-   * Check if inventory is open
+   * Check if UI is open
    */
   get isOpen(): boolean {
     return this._isOpen
@@ -680,7 +629,6 @@ export class InventoryUI {
   update(): void {
     if (!this.inventory) return
 
-    // Update inventory slots
     for (let i = 0; i < INVENTORY_TOTAL_SLOTS; i++) {
       const slot = this.inventory.getSlot(i)
       const element = this.slotElements[i]
@@ -689,7 +637,6 @@ export class InventoryUI {
       }
     }
 
-    // Update crafting grid slots
     for (let i = 0; i < CRAFTING_GRID_SIZE; i++) {
       const element = this.craftingSlotElements[i]
       const slot = this.craftingGrid[i]
@@ -709,7 +656,6 @@ export class InventoryUI {
     const durabilityFill = element.querySelector('.durability-fill') as HTMLElement
 
     if (isSlotEmpty(slot)) {
-      // Empty slot
       if (icon) {
         icon.style.backgroundImage = ''
         icon.style.backgroundColor = 'transparent'
@@ -721,7 +667,6 @@ export class InventoryUI {
         durabilityBar.style.display = 'none'
       }
     } else {
-      // Filled slot
       if (icon && slot.itemType !== null) {
         this.setSlotTexture(icon, slot.itemType)
       }
@@ -729,19 +674,17 @@ export class InventoryUI {
         countLabel.textContent = slot.count > 1 ? String(slot.count) : ''
       }
       
-      // Show durability bar for tools
       if (durabilityBar && durabilityFill && slot.durability !== undefined && slot.maxDurability !== undefined) {
         const percent = (slot.durability / slot.maxDurability) * 100
         durabilityBar.style.display = 'block'
         durabilityFill.style.width = `${percent}%`
         
-        // Color based on durability
         if (percent > 50) {
-          durabilityFill.style.background = '#4caf50' // Green
+          durabilityFill.style.background = '#4caf50'
         } else if (percent > 25) {
-          durabilityFill.style.background = '#ff9800' // Orange
+          durabilityFill.style.background = '#ff9800'
         } else {
-          durabilityFill.style.background = '#f44336' // Red
+          durabilityFill.style.background = '#f44336'
         }
       } else if (durabilityBar) {
         durabilityBar.style.display = 'none'
@@ -750,7 +693,7 @@ export class InventoryUI {
   }
 
   /**
-   * Set slot texture from block type
+   * Set slot texture
    */
   private setSlotTexture(icon: HTMLElement, blockType: BlockType): void {
     try {
@@ -760,7 +703,6 @@ export class InventoryUI {
 
       const textureIndex = getTextureIndexForFace(blockType, 'side')
       
-      // Create preview canvas
       const previewCanvas = document.createElement('canvas')
       previewCanvas.width = config.tileSize
       previewCanvas.height = config.tileSize
@@ -778,7 +720,6 @@ export class InventoryUI {
         icon.style.backgroundColor = 'transparent'
       }
     } catch {
-      // Fallback to solid color
       const color = BLOCK_COLORS[blockType] ?? 0x808080
       icon.style.backgroundImage = ''
       icon.style.backgroundColor = `#${color.toString(16).padStart(6, '0')}`
@@ -797,7 +738,7 @@ export class InventoryUI {
   }
 
   /**
-   * Dispose of UI elements
+   * Dispose
    */
   dispose(): void {
     if (this.overlay && this.overlay.parentNode) {

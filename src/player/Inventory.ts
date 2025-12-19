@@ -262,6 +262,74 @@ export class Inventory {
   }
 
   /**
+   * Set a slot directly (Feature: 023-crafting-tools-system)
+   */
+  setSlot(slotIndex: number, slot: ItemSlot): void {
+    if (slotIndex < 0 || slotIndex >= INVENTORY_TOTAL_SLOTS) return
+    this._slots[slotIndex] = { ...slot }
+    this.notifyChange()
+    this.notifyInventoryChange()
+  }
+
+  /**
+   * Check if inventory can add a specific amount of items
+   * (Feature: 023-crafting-tools-system)
+   */
+  canAddItem(itemType: BlockType, count: number): boolean {
+    if (itemType === BlockType.AIR || count <= 0) return false
+
+    let remaining = count
+
+    // Check existing stacks
+    for (const slot of this._slots) {
+      if (slot.itemType === itemType && slot.count < MAX_STACK_SIZE) {
+        remaining -= (MAX_STACK_SIZE - slot.count)
+        if (remaining <= 0) return true
+      }
+    }
+
+    // Check empty slots
+    for (const slot of this._slots) {
+      if (isSlotEmpty(slot)) {
+        remaining -= MAX_STACK_SIZE
+        if (remaining <= 0) return true
+      }
+    }
+
+    return remaining <= 0
+  }
+
+  /**
+   * Add item with durability (for tools)
+   * (Feature: 023-crafting-tools-system)
+   */
+  addItemWithDurability(itemType: BlockType, count: number, durability: number, maxDurability: number): number {
+    if (count <= 0) return 0
+    if (itemType === BlockType.AIR) return 0
+
+    let added = 0
+
+    // Tools don't stack, so find empty slots only
+    for (let i = 0; i < INVENTORY_TOTAL_SLOTS && added < count; i++) {
+      const slot = this._slots[i]!
+      if (isSlotEmpty(slot)) {
+        slot.itemType = itemType
+        slot.count = 1
+        slot.durability = durability
+        slot.maxDurability = maxDurability
+        added++
+      }
+    }
+
+    if (added > 0) {
+      this.notifyChange()
+      this.notifyInventoryChange()
+    }
+
+    return added
+  }
+
+  /**
    * Get the currently selected item (from hotbar)
    */
   getSelectedItem(): ItemSlot {
@@ -316,7 +384,9 @@ export class Inventory {
     return {
       slots: this._slots.map(slot => ({
         itemType: slot.itemType,
-        count: slot.count
+        count: slot.count,
+        durability: slot.durability,
+        maxDurability: slot.maxDurability
       })),
       selectedSlot: this._selectedSlot
     }
@@ -334,7 +404,9 @@ export class Inventory {
       if (savedSlot) {
         this._slots[i] = {
           itemType: savedSlot.itemType as BlockType | null,
-          count: savedSlot.count
+          count: savedSlot.count,
+          durability: savedSlot.durability,
+          maxDurability: savedSlot.maxDurability
         }
       }
     }

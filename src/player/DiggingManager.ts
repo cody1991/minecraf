@@ -1,6 +1,7 @@
 /**
  * DiggingManager - Manages block digging progress
  * Feature: 023-digging-system
+ * Feature: 023-crafting-tools-system - Added tool speed multiplier and durability
  */
 
 import { BlockType, isSolid } from '../core/Block'
@@ -10,6 +11,7 @@ import { Raycaster, INTERACTION_DISTANCE } from '../utils/Raycaster'
 import { getBlockDiggingTime, getCrackStage } from './DiggingConfig'
 import { AudioManager } from '../audio/AudioManager'
 import { ItemEntity } from '../entities/ItemEntity'
+import { ToolSystem } from '../tools/ToolSystem'
 
 /** Digging state */
 interface DiggingState {
@@ -197,7 +199,17 @@ export class DiggingManager {
    * Start digging a block
    */
   private startDigging(x: number, y: number, z: number, blockType: BlockType): void {
-    const totalTime = getBlockDiggingTime(blockType)
+    let totalTime = getBlockDiggingTime(blockType)
+    
+    // Apply tool speed multiplier (Feature: 023-crafting-tools-system)
+    const selectedItem = this.player.inventory.getSelectedItem()
+    if (selectedItem.itemType) {
+      const toolSystem = ToolSystem.getInstance()
+      const speedMultiplier = toolSystem.getSpeedMultiplier(selectedItem.itemType, blockType)
+      if (speedMultiplier > 1) {
+        totalTime = totalTime / speedMultiplier
+      }
+    }
     
     this.diggingState = {
       blockX: x,
@@ -247,6 +259,9 @@ export class DiggingManager {
         blockZ + 0.5
       )
       
+      // Reduce tool durability (Feature: 023-crafting-tools-system)
+      this.consumeToolDurability()
+      
       // Create dropped item
       if (blockType !== BlockType.AIR && this.callbacks.onItemDrop) {
         const itemEntity = new ItemEntity(
@@ -264,6 +279,44 @@ export class DiggingManager {
     
     this.stopDigging()
     return success
+  }
+
+  /**
+   * Consume tool durability after breaking a block
+   * Feature: 023-crafting-tools-system
+   */
+  private consumeToolDurability(): void {
+    const selectedSlot = this.player.inventory.selectedSlot
+    const selectedItem = this.player.inventory.getSelectedItem()
+    
+    if (!selectedItem.itemType) return
+    
+    const toolSystem = ToolSystem.getInstance()
+    if (!toolSystem.isTool(selectedItem.itemType)) return
+    
+    // Get current durability
+    const slot = this.player.inventory.getSlot(selectedSlot)
+    if (!slot || slot.durability === undefined) return
+    
+    // Use tool (reduce durability)
+    const result = toolSystem.useTool(selectedItem.itemType, slot.durability)
+    
+    if (result.broken) {
+      // Tool broke - remove from inventory
+      this.player.inventory.setSlot(selectedSlot, {
+        itemType: null,
+        count: 0
+      })
+      console.log('[DiggingManager] Tool broke!')
+      // Play break sound
+      AudioManager.getInstance().playSfx('tool_break', { volume: 0.7 })
+    } else {
+      // Update durability
+      this.player.inventory.setSlot(selectedSlot, {
+        ...slot,
+        durability: result.newDurability
+      })
+    }
   }
 
   /**
