@@ -8,7 +8,7 @@
  * Opens with E key, closes with E or ESC.
  */
 
-import { BlockType, BLOCK_COLORS } from '../core/Block'
+import { BlockType, BLOCK_COLORS, BLOCK_NAMES } from '../core/Block'
 import { Inventory } from '../player/Inventory'
 import { INVENTORY_TOTAL_SLOTS, HOTBAR_SLOTS, ItemSlot, isSlotEmpty, createEmptySlot } from '../player/InventoryConstants'
 import { getSharedTextureAtlas } from '../renderer/ChunkMesh'
@@ -42,6 +42,13 @@ export class InventoryUI {
   private draggedElement: HTMLElement | null = null
   private dragSource: 'inventory' | 'crafting' | 'output' = 'inventory'
 
+  // Cursor item (for split stack feature)
+  private cursorItem: ItemSlot = createEmptySlot()
+  private cursorElement: HTMLElement | null = null
+
+  // Tooltip element
+  private tooltipElement: HTMLElement | null = null
+
   // Callbacks
   private onOpenCallback: (() => void) | null = null
   private onCloseCallback: (() => void) | null = null
@@ -53,6 +60,8 @@ export class InventoryUI {
     }
     
     this.createUI()
+    this.createTooltip()
+    this.createCursorItem()
     this.setupKeyboardListener()
   }
 
@@ -164,6 +173,141 @@ export class InventoryUI {
         this.close()
       }
     })
+
+    // Track mouse movement for cursor item
+    this.overlay.addEventListener('mousemove', (e) => {
+      this.updateCursorPosition(e.clientX, e.clientY)
+    })
+  }
+
+  /**
+   * Create tooltip element
+   */
+  private createTooltip(): void {
+    this.tooltipElement = document.createElement('div')
+    this.tooltipElement.id = 'inventory-tooltip'
+    this.tooltipElement.style.cssText = `
+      position: fixed;
+      background: rgba(20, 0, 30, 0.94);
+      border: 2px solid #28007a;
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: white;
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 1100;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    `
+    document.body.appendChild(this.tooltipElement)
+  }
+
+  /**
+   * Create cursor item element (for split stack)
+   */
+  private createCursorItem(): void {
+    this.cursorElement = document.createElement('div')
+    this.cursorElement.id = 'cursor-item'
+    this.cursorElement.style.cssText = `
+      position: fixed;
+      width: 32px;
+      height: 32px;
+      pointer-events: none;
+      z-index: 1200;
+      display: none;
+      image-rendering: pixelated;
+    `
+    
+    // Icon
+    const icon = document.createElement('div')
+    icon.className = 'cursor-icon'
+    icon.style.cssText = `
+      width: 32px;
+      height: 32px;
+      background-size: cover;
+      image-rendering: pixelated;
+    `
+    this.cursorElement.appendChild(icon)
+    
+    // Count
+    const count = document.createElement('span')
+    count.className = 'cursor-count'
+    count.style.cssText = `
+      position: absolute;
+      bottom: 0;
+      right: 2px;
+      font-size: 12px;
+      color: white;
+      text-shadow: 1px 1px 1px black, -1px -1px 1px black;
+    `
+    this.cursorElement.appendChild(count)
+    
+    document.body.appendChild(this.cursorElement)
+  }
+
+  /**
+   * Update cursor item position
+   */
+  private updateCursorPosition(x: number, y: number): void {
+    if (this.cursorElement) {
+      this.cursorElement.style.left = `${x - 16}px`
+      this.cursorElement.style.top = `${y - 16}px`
+    }
+  }
+
+  /**
+   * Update cursor item display
+   */
+  private updateCursorDisplay(): void {
+    if (!this.cursorElement) return
+    
+    const icon = this.cursorElement.querySelector('.cursor-icon') as HTMLElement
+    const countLabel = this.cursorElement.querySelector('.cursor-count') as HTMLElement
+    
+    if (isSlotEmpty(this.cursorItem)) {
+      this.cursorElement.style.display = 'none'
+    } else {
+      this.cursorElement.style.display = 'block'
+      if (icon && this.cursorItem.itemType !== null) {
+        this.setSlotTexture(icon, this.cursorItem.itemType)
+      }
+      if (countLabel) {
+        countLabel.textContent = this.cursorItem.count > 1 ? String(this.cursorItem.count) : ''
+      }
+    }
+  }
+
+  /**
+   * Show tooltip for item
+   */
+  private showTooltip(slot: ItemSlot, x: number, y: number): void {
+    if (!this.tooltipElement || isSlotEmpty(slot) || slot.itemType === null) {
+      this.hideTooltip()
+      return
+    }
+    
+    const name = BLOCK_NAMES[slot.itemType] || `物品 #${slot.itemType}`
+    let tooltipText = name
+    
+    // Add durability info for tools
+    if (slot.durability !== undefined && slot.maxDurability !== undefined) {
+      tooltipText += `\n耐久度: ${slot.durability}/${slot.maxDurability}`
+    }
+    
+    this.tooltipElement.innerHTML = tooltipText.replace('\n', '<br>')
+    this.tooltipElement.style.display = 'block'
+    this.tooltipElement.style.left = `${x + 12}px`
+    this.tooltipElement.style.top = `${y + 12}px`
+  }
+
+  /**
+   * Hide tooltip
+   */
+  private hideTooltip(): void {
+    if (this.tooltipElement) {
+      this.tooltipElement.style.display = 'none'
+    }
   }
 
   /**
@@ -308,20 +452,71 @@ export class InventoryUI {
     slot.addEventListener('drop', (e) => this.handleDrop(e, index, source))
     slot.addEventListener('dragend', () => this.handleDragEnd())
 
-    // Click for output slot
-    if (source === 'output') {
-      slot.addEventListener('click', () => this.handleOutputClick())
-    }
+    // Click events
+    slot.addEventListener('click', (e) => this.handleSlotClick(e, index, source))
 
     // Right-click for split stack
     slot.addEventListener('contextmenu', (e) => {
       e.preventDefault()
-      if (source === 'inventory') {
-        this.handleRightClick(index)
+      this.handleRightClick(index, source)
+    })
+
+    // Hover for tooltip
+    slot.addEventListener('mouseenter', (e) => {
+      const slotData = this.getSlotData(index, source)
+      if (slotData && !isSlotEmpty(slotData)) {
+        this.showTooltip(slotData, e.clientX, e.clientY)
       }
+    })
+    
+    slot.addEventListener('mousemove', (e) => {
+      const slotData = this.getSlotData(index, source)
+      if (slotData && !isSlotEmpty(slotData)) {
+        this.showTooltip(slotData, e.clientX, e.clientY)
+      }
+    })
+    
+    slot.addEventListener('mouseleave', () => {
+      this.hideTooltip()
     })
 
     return slot
+  }
+
+  /**
+   * Get slot data by index and source
+   */
+  private getSlotData(index: number, source: 'inventory' | 'crafting' | 'output'): ItemSlot | null {
+    if (source === 'inventory' && this.inventory) {
+      return this.inventory.getSlot(index) ?? null
+    } else if (source === 'crafting') {
+      return this.craftingGrid[index] ?? null
+    } else if (source === 'output' && this.currentRecipe) {
+      return {
+        itemType: this.currentRecipe.result.item,
+        count: this.currentRecipe.result.count
+      }
+    }
+    return null
+  }
+
+  /**
+   * Handle slot click (left click)
+   */
+  private handleSlotClick(_e: MouseEvent, index: number, source: 'inventory' | 'crafting' | 'output'): void {
+    // Output slot special handling
+    if (source === 'output') {
+      this.handleOutputClick()
+      return
+    }
+
+    // If we have a cursor item, try to place it
+    if (!isSlotEmpty(this.cursorItem)) {
+      this.placeCursorItem(index, source)
+    } else {
+      // Pick up item from slot
+      this.pickupItem(index, source)
+    }
   }
 
   /**
@@ -564,11 +759,232 @@ export class InventoryUI {
   }
 
   /**
-   * Handle right-click (split stack)
+   * Handle right-click (split stack / place one)
    */
-  private handleRightClick(index: number): void {
-    // For now, just log - full split implementation would need cursor item
-    console.log(`[InventoryUI] Right-click on slot ${index}`)
+  private handleRightClick(index: number, source: 'inventory' | 'crafting' | 'output'): void {
+    if (source === 'output') return
+
+    // If we have cursor item, place ONE item
+    if (!isSlotEmpty(this.cursorItem)) {
+      this.placeOneItem(index, source)
+      return
+    }
+
+    // Otherwise, pick up half the stack
+    const slot = this.getSlotData(index, source)
+    if (!slot || isSlotEmpty(slot)) return
+
+    const halfCount = Math.ceil(slot.count / 2)
+    const remainCount = slot.count - halfCount
+
+    // Put half in cursor
+    this.cursorItem = {
+      itemType: slot.itemType,
+      count: halfCount,
+      durability: slot.durability,
+      maxDurability: slot.maxDurability
+    }
+
+    // Update source slot
+    if (remainCount > 0) {
+      if (source === 'inventory' && this.inventory) {
+        this.inventory.setSlot(index, {
+          itemType: slot.itemType,
+          count: remainCount,
+          durability: slot.durability,
+          maxDurability: slot.maxDurability
+        })
+      } else if (source === 'crafting') {
+        this.craftingGrid[index] = {
+          itemType: slot.itemType,
+          count: remainCount,
+          durability: slot.durability,
+          maxDurability: slot.maxDurability
+        }
+      }
+    } else {
+      // Empty the slot
+      if (source === 'inventory' && this.inventory) {
+        this.inventory.setSlot(index, createEmptySlot())
+      } else if (source === 'crafting') {
+        this.craftingGrid[index] = createEmptySlot()
+      }
+    }
+
+    this.updateCursorDisplay()
+    this.updateCraftingOutput()
+    this.update()
+  }
+
+  /**
+   * Pick up entire stack from slot
+   */
+  private pickupItem(index: number, source: 'inventory' | 'crafting'): void {
+    const slot = this.getSlotData(index, source)
+    if (!slot || isSlotEmpty(slot)) return
+
+    // Move to cursor
+    this.cursorItem = {
+      itemType: slot.itemType,
+      count: slot.count,
+      durability: slot.durability,
+      maxDurability: slot.maxDurability
+    }
+
+    // Clear source slot
+    if (source === 'inventory' && this.inventory) {
+      this.inventory.setSlot(index, createEmptySlot())
+    } else if (source === 'crafting') {
+      this.craftingGrid[index] = createEmptySlot()
+    }
+
+    this.updateCursorDisplay()
+    this.updateCraftingOutput()
+    this.update()
+  }
+
+  /**
+   * Place cursor item into slot
+   */
+  private placeCursorItem(index: number, source: 'inventory' | 'crafting'): void {
+    if (isSlotEmpty(this.cursorItem)) return
+
+    const targetSlot = this.getSlotData(index, source)
+
+    // If target is empty, place all
+    if (!targetSlot || isSlotEmpty(targetSlot)) {
+      if (source === 'inventory' && this.inventory) {
+        this.inventory.setSlot(index, {
+          itemType: this.cursorItem.itemType,
+          count: this.cursorItem.count,
+          durability: this.cursorItem.durability,
+          maxDurability: this.cursorItem.maxDurability
+        })
+      } else if (source === 'crafting') {
+        this.craftingGrid[index] = {
+          itemType: this.cursorItem.itemType,
+          count: this.cursorItem.count,
+          durability: this.cursorItem.durability,
+          maxDurability: this.cursorItem.maxDurability
+        }
+      }
+      this.cursorItem = createEmptySlot()
+    } 
+    // If same item type, try to stack
+    else if (targetSlot.itemType === this.cursorItem.itemType && 
+             targetSlot.durability === undefined) {  // Don't stack tools
+      const maxStack = 64
+      const canAdd = maxStack - targetSlot.count
+      const toAdd = Math.min(canAdd, this.cursorItem.count)
+      
+      if (toAdd > 0) {
+        if (source === 'inventory' && this.inventory) {
+          this.inventory.setSlot(index, {
+            itemType: targetSlot.itemType,
+            count: targetSlot.count + toAdd
+          })
+        } else if (source === 'crafting') {
+          this.craftingGrid[index] = {
+            itemType: targetSlot.itemType,
+            count: targetSlot.count + toAdd
+          }
+        }
+        
+        this.cursorItem.count -= toAdd
+        if (this.cursorItem.count <= 0) {
+          this.cursorItem = createEmptySlot()
+        }
+      }
+    }
+    // Otherwise swap
+    else {
+      const temp: ItemSlot = {
+        itemType: targetSlot.itemType,
+        count: targetSlot.count,
+        durability: targetSlot.durability,
+        maxDurability: targetSlot.maxDurability
+      }
+      
+      if (source === 'inventory' && this.inventory) {
+        this.inventory.setSlot(index, {
+          itemType: this.cursorItem.itemType,
+          count: this.cursorItem.count,
+          durability: this.cursorItem.durability,
+          maxDurability: this.cursorItem.maxDurability
+        })
+      } else if (source === 'crafting') {
+        this.craftingGrid[index] = {
+          itemType: this.cursorItem.itemType,
+          count: this.cursorItem.count,
+          durability: this.cursorItem.durability,
+          maxDurability: this.cursorItem.maxDurability
+        }
+      }
+      
+      this.cursorItem = temp
+    }
+
+    this.updateCursorDisplay()
+    this.updateCraftingOutput()
+    this.update()
+  }
+
+  /**
+   * Place ONE item from cursor into slot
+   */
+  private placeOneItem(index: number, source: 'inventory' | 'crafting'): void {
+    if (isSlotEmpty(this.cursorItem)) return
+
+    const targetSlot = this.getSlotData(index, source)
+
+    // If target is empty, place one
+    if (!targetSlot || isSlotEmpty(targetSlot)) {
+      if (source === 'inventory' && this.inventory) {
+        this.inventory.setSlot(index, {
+          itemType: this.cursorItem.itemType,
+          count: 1,
+          durability: this.cursorItem.durability,
+          maxDurability: this.cursorItem.maxDurability
+        })
+      } else if (source === 'crafting') {
+        this.craftingGrid[index] = {
+          itemType: this.cursorItem.itemType,
+          count: 1,
+          durability: this.cursorItem.durability,
+          maxDurability: this.cursorItem.maxDurability
+        }
+      }
+      
+      this.cursorItem.count--
+      if (this.cursorItem.count <= 0) {
+        this.cursorItem = createEmptySlot()
+      }
+    }
+    // If same item type and can stack
+    else if (targetSlot.itemType === this.cursorItem.itemType && 
+             targetSlot.count < 64 &&
+             targetSlot.durability === undefined) {
+      if (source === 'inventory' && this.inventory) {
+        this.inventory.setSlot(index, {
+          itemType: targetSlot.itemType,
+          count: targetSlot.count + 1
+        })
+      } else if (source === 'crafting') {
+        this.craftingGrid[index] = {
+          itemType: targetSlot.itemType,
+          count: targetSlot.count + 1
+        }
+      }
+      
+      this.cursorItem.count--
+      if (this.cursorItem.count <= 0) {
+        this.cursorItem = createEmptySlot()
+      }
+    }
+
+    this.updateCursorDisplay()
+    this.updateCraftingOutput()
+    this.update()
   }
 
   /**
@@ -623,6 +1039,9 @@ export class InventoryUI {
    * Close the inventory UI
    */
   close(): void {
+    // Return cursor item to inventory
+    this.returnCursorItem()
+    
     // Return crafting grid items to inventory
     this.returnCraftingItems()
     
@@ -632,9 +1051,31 @@ export class InventoryUI {
       this.overlay.style.display = 'none'
     }
 
+    // Hide tooltip and cursor
+    this.hideTooltip()
+    if (this.cursorElement) {
+      this.cursorElement.style.display = 'none'
+    }
+
     if (this.onCloseCallback) {
       this.onCloseCallback()
     }
+  }
+
+  /**
+   * Return cursor item to inventory
+   */
+  private returnCursorItem(): void {
+    if (!this.inventory || isSlotEmpty(this.cursorItem)) return
+
+    if (this.cursorItem.itemType !== null) {
+      const added = this.inventory.addItem(this.cursorItem.itemType, this.cursorItem.count)
+      if (added < this.cursorItem.count) {
+        console.log(`[InventoryUI] Could not return ${this.cursorItem.count - added} cursor items to inventory`)
+      }
+    }
+    this.cursorItem = createEmptySlot()
+    this.updateCursorDisplay()
   }
 
   /**
@@ -803,8 +1244,16 @@ export class InventoryUI {
     if (this.overlay && this.overlay.parentNode) {
       this.overlay.parentNode.removeChild(this.overlay)
     }
+    if (this.tooltipElement && this.tooltipElement.parentNode) {
+      this.tooltipElement.parentNode.removeChild(this.tooltipElement)
+    }
+    if (this.cursorElement && this.cursorElement.parentNode) {
+      this.cursorElement.parentNode.removeChild(this.cursorElement)
+    }
     this.overlay = null
     this.container = null
+    this.tooltipElement = null
+    this.cursorElement = null
     this.slotElements = []
     this.craftingSlotElements = []
     this.craftingOutputElement = null

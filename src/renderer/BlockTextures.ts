@@ -66,6 +66,13 @@ export const TextureIndex = {
   COOKED_RABBIT: 22,    // Same as RAW_BEEF
   // Campfire (023-campfire-system)
   CAMPFIRE: 21,         // Use torch texture as placeholder
+  // Crafting & Tools System (023-crafting-tools-system)
+  CRAFTING_TABLE_TOP: 24,
+  CRAFTING_TABLE_SIDE: 25,
+  FURNACE_TOP: 26,
+  FURNACE_FRONT: 27,
+  FURNACE_SIDE: 28,
+  FURNACE_FRONT_LIT: 29,
 } as const
 
 /**
@@ -263,6 +270,22 @@ export const BLOCK_TEXTURE_MAPS: Partial<Record<BlockType, BlockTextureMap>> = {
     top: TextureIndex.CAMPFIRE,
     bottom: TextureIndex.CAMPFIRE,
     side: TextureIndex.CAMPFIRE
+  },
+  // Crafting & Tools System (023-crafting-tools-system)
+  [BlockType.CRAFTING_TABLE]: {
+    top: TextureIndex.CRAFTING_TABLE_TOP,
+    bottom: TextureIndex.PLANKS,
+    side: TextureIndex.CRAFTING_TABLE_SIDE
+  },
+  [BlockType.FURNACE]: {
+    top: TextureIndex.FURNACE_TOP,
+    bottom: TextureIndex.FURNACE_TOP,
+    side: TextureIndex.FURNACE_FRONT
+  },
+  [BlockType.FURNACE_LIT]: {
+    top: TextureIndex.FURNACE_TOP,
+    bottom: TextureIndex.FURNACE_TOP,
+    side: TextureIndex.FURNACE_FRONT_LIT
   }
 }
 

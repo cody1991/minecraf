@@ -36,7 +36,7 @@ export interface TextureAtlasConfig {
 const DEFAULT_CONFIG: TextureAtlasConfig = {
   imagePath: 'textures/blocks.png',
   tileSize: 16,
-  columns: 24,  // Expanded for landmark blocks
+  columns: 30,  // Expanded for crafting blocks
   rows: 3
 }
 
@@ -99,6 +99,13 @@ export class TextureAtlas {
     // Food items (021-food-system)
     this.generateRawBeefTexture(ctx, TextureIndex.RAW_BEEF, 0)
     this.generateRawPorkchopTexture(ctx, TextureIndex.RAW_PORKCHOP, 0)
+    // Crafting & Tools System (023-crafting-tools-system)
+    this.generateCraftingTableTopTexture(ctx, TextureIndex.CRAFTING_TABLE_TOP, 0)
+    this.generateCraftingTableSideTexture(ctx, TextureIndex.CRAFTING_TABLE_SIDE, 0)
+    this.generateFurnaceTopTexture(ctx, TextureIndex.FURNACE_TOP, 0)
+    this.generateFurnaceFrontTexture(ctx, TextureIndex.FURNACE_FRONT, 0)
+    this.generateFurnaceSideTexture(ctx, TextureIndex.FURNACE_SIDE, 0)
+    this.generateFurnaceFrontLitTexture(ctx, TextureIndex.FURNACE_FRONT_LIT, 0)
 
     const texture = new THREE.CanvasTexture(this.canvas)
     texture.magFilter = THREE.NearestFilter
@@ -685,6 +692,312 @@ export class TextureAtlas {
     // Bone detail
     ctx.fillStyle = '#d4d4aa'
     ctx.fillRect(x + tileSize - 3, y + 4, 1, tileSize - 8)
+  }
+
+  /**
+   * Generate crafting table top texture (023-crafting-tools-system)
+   * Shows a 3x3 crafting grid pattern
+   */
+  private generateCraftingTableTopTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base wood color
+    ctx.fillStyle = '#bc8f5a'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add wood grain variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 20
+        const r = Math.max(0, Math.min(255, 188 + noise))
+        const g = Math.max(0, Math.min(255, 143 + noise))
+        const b = Math.max(0, Math.min(255, 90 + noise))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Draw 3x3 crafting grid
+    const gridSize = 10
+    const gridStart = (tileSize - gridSize) / 2
+    const cellSize = gridSize / 3
+
+    // Grid background (darker)
+    ctx.fillStyle = '#8b6914'
+    ctx.fillRect(x + gridStart, y + gridStart, gridSize, gridSize)
+
+    // Grid lines
+    ctx.strokeStyle = '#5a4510'
+    ctx.lineWidth = 1
+    for (let i = 0; i <= 3; i++) {
+      // Horizontal lines
+      ctx.beginPath()
+      ctx.moveTo(x + gridStart, y + gridStart + i * cellSize)
+      ctx.lineTo(x + gridStart + gridSize, y + gridStart + i * cellSize)
+      ctx.stroke()
+      // Vertical lines
+      ctx.beginPath()
+      ctx.moveTo(x + gridStart + i * cellSize, y + gridStart)
+      ctx.lineTo(x + gridStart + i * cellSize, y + gridStart + gridSize)
+      ctx.stroke()
+    }
+
+    // Border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
+  }
+
+  /**
+   * Generate crafting table side texture (023-crafting-tools-system)
+   * Shows wood planks with tool icons
+   */
+  private generateCraftingTableSideTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base wood color
+    ctx.fillStyle = '#bc8f5a'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add wood grain variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 20
+        const r = Math.max(0, Math.min(255, 188 + noise))
+        const g = Math.max(0, Math.min(255, 143 + noise))
+        const b = Math.max(0, Math.min(255, 90 + noise))
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Draw saw icon (left side)
+    ctx.fillStyle = '#808080'
+    // Saw blade
+    ctx.fillRect(x + 2, y + 6, 5, 1)
+    ctx.fillRect(x + 2, y + 7, 5, 1)
+    // Saw teeth
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(x + 2 + i, y + 8, 1, 1)
+    }
+    // Saw handle
+    ctx.fillStyle = '#6b4423'
+    ctx.fillRect(x + 1, y + 5, 2, 4)
+
+    // Draw hammer icon (right side)
+    ctx.fillStyle = '#808080'
+    // Hammer head
+    ctx.fillRect(x + 10, y + 5, 4, 2)
+    // Hammer handle
+    ctx.fillStyle = '#6b4423'
+    ctx.fillRect(x + 11, y + 7, 2, 5)
+
+    // Horizontal wood plank line
+    ctx.strokeStyle = 'rgba(90, 70, 40, 0.5)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(x, y + tileSize / 2)
+    ctx.lineTo(x + tileSize, y + tileSize / 2)
+    ctx.stroke()
+
+    // Border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
+  }
+
+  /**
+   * Generate furnace top texture (023-crafting-tools-system)
+   * Shows stone with air vents
+   */
+  private generateFurnaceTopTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base stone color
+    ctx.fillStyle = '#808080'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add stone variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const shade = Math.max(0, Math.min(255, 128 + noise))
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Draw air vent pattern (darker squares in center)
+    ctx.fillStyle = '#4a4a4a'
+    ctx.fillRect(x + 5, y + 5, 2, 2)
+    ctx.fillRect(x + 9, y + 5, 2, 2)
+    ctx.fillRect(x + 5, y + 9, 2, 2)
+    ctx.fillRect(x + 9, y + 9, 2, 2)
+
+    // Border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
+  }
+
+  /**
+   * Generate furnace front texture (023-crafting-tools-system)
+   * Shows stone with furnace opening
+   */
+  private generateFurnaceFrontTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base stone color
+    ctx.fillStyle = '#808080'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add stone variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const shade = Math.max(0, Math.min(255, 128 + noise))
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Draw furnace opening (dark rectangle)
+    ctx.fillStyle = '#2a2a2a'
+    ctx.fillRect(x + 4, y + 6, 8, 7)
+
+    // Opening border (darker stone)
+    ctx.strokeStyle = '#4a4a4a'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 3.5, y + 5.5, 9, 8)
+
+    // Grate lines inside opening
+    ctx.strokeStyle = '#1a1a1a'
+    ctx.beginPath()
+    ctx.moveTo(x + 4, y + 9)
+    ctx.lineTo(x + 12, y + 9)
+    ctx.moveTo(x + 4, y + 11)
+    ctx.lineTo(x + 12, y + 11)
+    ctx.stroke()
+
+    // Border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
+  }
+
+  /**
+   * Generate furnace side texture (023-crafting-tools-system)
+   * Shows plain stone
+   */
+  private generateFurnaceSideTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base stone color
+    ctx.fillStyle = '#808080'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add stone variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const shade = Math.max(0, Math.min(255, 128 + noise))
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Stone block pattern
+    ctx.strokeStyle = 'rgba(60, 60, 60, 0.4)'
+    ctx.lineWidth = 1
+    // Horizontal line
+    ctx.beginPath()
+    ctx.moveTo(x, y + 8)
+    ctx.lineTo(x + tileSize, y + 8)
+    ctx.stroke()
+    // Vertical lines (offset)
+    ctx.beginPath()
+    ctx.moveTo(x + 8, y)
+    ctx.lineTo(x + 8, y + 8)
+    ctx.moveTo(x + 4, y + 8)
+    ctx.lineTo(x + 4, y + tileSize)
+    ctx.moveTo(x + 12, y + 8)
+    ctx.lineTo(x + 12, y + tileSize)
+    ctx.stroke()
+
+    // Border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
+  }
+
+  /**
+   * Generate lit furnace front texture (023-crafting-tools-system)
+   * Shows stone with glowing furnace opening
+   */
+  private generateFurnaceFrontLitTexture(ctx: CanvasRenderingContext2D, col: number, row: number): void {
+    const { tileSize } = this.config
+    const x = col * tileSize
+    const y = row * tileSize
+
+    // Base stone color
+    ctx.fillStyle = '#808080'
+    ctx.fillRect(x, y, tileSize, tileSize)
+
+    // Add stone variation
+    for (let px = 0; px < tileSize; px++) {
+      for (let py = 0; py < tileSize; py++) {
+        const noise = (Math.random() - 0.5) * 25
+        const shade = Math.max(0, Math.min(255, 128 + noise))
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`
+        ctx.fillRect(x + px, y + py, 1, 1)
+      }
+    }
+
+    // Draw glowing furnace opening
+    // Outer glow
+    ctx.fillStyle = 'rgba(255, 100, 0, 0.3)'
+    ctx.fillRect(x + 2, y + 4, 12, 10)
+
+    // Fire/glow inside
+    ctx.fillStyle = '#ff6600'
+    ctx.fillRect(x + 4, y + 6, 8, 7)
+
+    // Brighter center
+    ctx.fillStyle = '#ff9933'
+    ctx.fillRect(x + 5, y + 7, 6, 5)
+
+    // Hottest center
+    ctx.fillStyle = '#ffcc00'
+    ctx.fillRect(x + 6, y + 8, 4, 3)
+
+    // Opening border (darker stone)
+    ctx.strokeStyle = '#4a4a4a'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 3.5, y + 5.5, 9, 8)
+
+    // Grate lines inside opening
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.beginPath()
+    ctx.moveTo(x + 4, y + 9)
+    ctx.lineTo(x + 12, y + 9)
+    ctx.moveTo(x + 4, y + 11)
+    ctx.lineTo(x + 12, y + 11)
+    ctx.stroke()
+
+    // Border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1)
   }
 
   /**
